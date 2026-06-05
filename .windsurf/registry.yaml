@@ -1,0 +1,163 @@
+version: 1.0.0
+
+twin:
+  graph_backend: memory
+  index_owner: context-indexer
+  output_store: randstad/output
+
+stages:
+  - id: 1
+    name: context-discovery
+    team: 1
+    workflow: stage-1-context-discovery
+    gate: stage-1-approval
+  - id: 2
+    name: reverse-engineering
+    team: 2
+    workflow: stage-2-digital-twin
+    gate: stage-2-approval
+  - id: 3
+    name: transformation-target
+    team: 3
+    workflow: stage-3-target-design
+    gate: stage-3-approval
+  - id: 4
+    name: code-generation
+    team: 4
+    workflow: stage-4-code-generation
+    gate: stage-4-approval
+
+agents:
+  # Team #1 — Context Discovery
+  - id: appmod-analyst
+    stage: 1
+    team: 1
+    depends_on: [context-indexer]
+    mcp_servers: [memory, github, deepwiki, fetch]
+    external_repositories: ["github.com/fbeawels/shopizer_v1"]
+    hitl_gate: stage-1-approval
+
+  # Team #2 — Reverse Engineering
+  - id: software-architect
+    stage: 2
+    team: 2
+    depends_on: [appmod-analyst]
+    mcp_servers: [memory, context7, deepwiki]
+    external_repositories: ["struts2-docs", "spring-docs", "hibernate-docs", "tiles-docs", "jaxws-docs"]
+    hitl_gate: stage-2-approval
+  - id: business-analyst
+    stage: 2
+    team: 2
+    depends_on: [appmod-analyst]
+    mcp_servers: [memory, playwright, fetch]
+    external_repositories: []
+    hitl_gate: stage-2-approval
+  - id: software-debt-analyst
+    stage: 2
+    team: 2
+    depends_on: [appmod-analyst]
+    mcp_servers: [memory, context7, brave-search, fetch, github]
+    external_repositories: ["nvd-cve", "endoflife.date"]
+    hitl_gate: stage-2-approval
+  - id: quality-assurance
+    stage: 2
+    team: 2
+    depends_on: [business-analyst]
+    mcp_servers: [memory, playwright]
+    external_repositories: []
+    hitl_gate: stage-2-approval
+
+  # Team #3 — Transformation Target
+  - id: security-analyst
+    stage: 3
+    team: 3
+    depends_on: [software-architect]
+    mcp_servers: [memory, brave-search, fetch, github]
+    external_repositories: ["nvd-cve", "owasp-top10", "owasp-asvs", "github-advisories", "cwe"]
+    hitl_gate: stage-3-approval
+  - id: compliance-analyst
+    stage: 3
+    team: 3
+    depends_on: [business-analyst]
+    mcp_servers: [memory, brave-search, fetch]
+    external_repositories: ["gdpr", "pci-dss"]
+    hitl_gate: stage-3-approval
+  - id: coding-framework
+    stage: 3
+    team: 3
+    depends_on: [software-architect, software-debt-analyst]
+    mcp_servers: [memory, context7, deepwiki, github]
+    external_repositories: ["spring-projects/spring-boot", "build-tool-docs"]
+    hitl_gate: stage-3-approval
+
+  # Team #4 — Code Generation
+  - id: project-scaffolding
+    stage: 4
+    team: 4
+    depends_on: [coding-framework]
+    mcp_servers: [memory, context7, github]
+    external_repositories: ["destination-repo", "dependency-registries"]
+    hitl_gate: stage-4-approval
+  - id: tech-debt-manager
+    stage: 4
+    team: 4
+    depends_on: [software-debt-analyst, coding-framework]
+    mcp_servers: [memory, github]
+    external_repositories: ["destination-repo"]
+    hitl_gate: stage-4-approval
+  - id: test-generation
+    stage: 4
+    team: 4
+    depends_on: [quality-assurance, coding-framework]
+    mcp_servers: [memory, context7, playwright, github]
+    external_repositories: ["test-frameworks"]
+    hitl_gate: stage-4-approval
+  - id: cicd-integration
+    stage: 4
+    team: 4
+    depends_on: [project-scaffolding, test-generation]
+    mcp_servers: [memory, github, fetch]
+    external_repositories: ["destination-repo"]
+    hitl_gate: stage-4-approval
+
+  # Cross-cutting (always-on / core)
+  - id: context-indexer
+    stage: all
+    team: core
+    depends_on: []
+    mcp_servers: [memory, fetch]
+    external_repositories: []
+    hitl_gate: none
+  - id: orchestrator
+    stage: all
+    team: core
+    depends_on: []
+    mcp_servers: [memory]
+    external_repositories: []
+    hitl_gate: none
+  - id: hitl-gatekeeper
+    stage: gates
+    team: core
+    depends_on: []
+    mcp_servers: [memory, fetch]
+    external_repositories: []
+    hitl_gate: none
+  - id: pii-redaction-filter
+    stage: all
+    team: core
+    depends_on: []
+    mcp_servers: [memory, github]
+    external_repositories: []
+    hitl_gate: none
+  - id: documentation-traceability
+    stage: all
+    team: core
+    depends_on: []
+    mcp_servers: [memory]
+    external_repositories: []
+    hitl_gate: none
+
+always_on:
+  - context-indexer
+  - pii-redaction-filter
+  - documentation-traceability
