@@ -1,0 +1,58 @@
+
+-- Merchant Store Data for MERCHANT ID 1
+-- This creates the default store configuration
+-- Column names are for HSQLDB (no underscores)
+
+INSERT INTO MERCHANT_STORE (
+  MERCHANTID,
+  STORENAME,
+  COUNTRY,
+  ZONE,
+  STORESTATEPROVINCE,
+  CURRENCY,
+  BGCOLORCODE,
+  STORELOGO,
+  STOREBANNER,
+  STOREPHONE,
+  STOREEMAILADDRESS,
+  CONTINUESHOPPINGURL,
+  STOREADDRESS,
+  STORECITY,
+  STOREPOSTALCODE,
+  SUPPORTEDLANGUAGES,
+  WEIGHTUNITCODE,
+  SEIZEUNITCODE,
+  LAST_MODIFIED,
+  IN_BUSINESS_SINCE,
+  TEMPLATE_MODULE,
+  INVOICE_MODULE,
+  USE_CACHE,
+  DEFAULTLANG,
+  DOMAINNAME
+) VALUES (
+  1,
+  'Default Store',
+  38,
+  '0',
+  'Quebec',
+  'CAD',
+  1,
+  '',
+  '',
+  '555-1234',
+  'store@example.com',
+  '',
+  '123 Main Street',
+  'Montreal',
+  'H1H 1H1',
+  '1,2',
+  'LB',
+  'IN',
+  '2010-01-01 00:00:00',
+  '2010-01-01 00:00:00',
+  'decotemplate',
+  NULL,
+  true,
+  'en',
+  'localhost'
+);

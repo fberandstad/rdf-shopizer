@@ -1,0 +1,4 @@
+#!/bin/bash
+
+# Start HSQLDB server
+java -cp ../../lib/drivers/hsqldb.jar org.hsqldb.server.Server --database.0 file:salesmanager --dbname.0 SALESMANAGER
