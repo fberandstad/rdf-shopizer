@@ -160,3 +160,27 @@ ADR-0001..ADR-0013 recorded in `target-architecture.md §6` (agentic paradigm, e
 | LLM01..LLM10 | Agent threat controls | security-baseline.md §3; threat-model.md §4 |
 
 **Orphan check (Stage 3):** every legacy FS/RULE maps to a target pattern + artifact; every scan detection maps to a RISK (46/46); every DPR links to a control/RISK. No orphan rows. Acceptance tests (golden master TEST-0001..0028 + new guarded-tool tests) assigned to Stage 4.
+
+---
+
+# Stage 4 extension (Code Generation) — Wave 0 (Foundation & Agent Core) — 2026-06-06
+
+## Target pattern → generated code → test
+
+| Target pattern / ADR | Generated file(s) (`04-forward/converted/`) | Test |
+|----------------------|----------------------------------------------|------|
+| App shell + Randstad theme (example/ fidelity) | `client/src/App.jsx`, `Sidebar.jsx`, `index.css`, `tailwind.config.js` | manual UI / W1 E2E |
+| Session auth (DEBT-0015, RISK-0013) | `server/auth.js`, `middleware/rbac.js` | TEST-0023 (integration) |
+| Postgres + pgvector data layer (ADR-0010) | `server/db.js`, `migrations.js`, `seed.js` | readiness `/api/ready` |
+| Agent loop via CopilotKit+OpenAI (ADR-0001/0002/0003) | `server/agent/gateway.js`, `AGENTS.md`, `SOUL.md` | TEST-W0-01 |
+| Typed tool registry (ADR-0005) | `server/agent/tools/index.js`, `TOOLS.md` | TEST-W0-01/03 |
+| ClawBands HITL + audit (ADR-0007, RISK-0015) | `server/agent/clawbands.js`, `routes/agent.js` | TEST-W0-01 |
+| Aquaman credential isolation (ADR-0007) | `server/agent/aquaman.js` | (W3 payment) |
+| Markdown + pgvector memory (ADR-0008) | `server/agent/memory.js`, `MEMORY.md` | (W1) |
+| Embedded twin-knowledge RAG (ADR-0011) | `server/rag/{embedder,retriever,ingest}.js`, `routes/knowledge.js`, `client/pages/Knowledge.jsx` | (W1) |
+| Self-reporting health/metrics (ADR-0012, AN-2, RISK-0024) | `server/routes/{ops,metricsQueries}.js`, `client/pages/Health.jsx` | TEST-W0-04/05 |
+| MCP server default-deny (ADR-0013, RISK-0022/0023) | `server/agent/mcp.js` | TEST-W0-02 |
+| Heartbeat scheduler | `server/agent/heartbeat.js` | (W6) |
+| Container/build | `Dockerfile`, `docker-compose.yml`, `.env.example` | `node --check` (22/22 pass) |
+
+**Orphan check (W0):** every generated module traces to a target ADR/pattern and a test (unit now, integration/E2E gated by DB/UI in W1+). No orphan rows. Legacy source untouched (read-only).
