@@ -1,0 +1,73 @@
+{
+  "_schema_ref": "SPECS.md §9 module-map",
+  "application": "Shopizer",
+  "version": "1.1.5",
+  "release_date": "2011-08-14",
+  "base_package": "com.salesmanager",
+  "build_tool": "Apache Ant 1.6+",
+  "target_jdk": "1.5+",
+  "generated": "2026-06-06",
+  "modules": [
+    {
+      "id": "sm-core",
+      "type": "library",
+      "language": "java",
+      "artifact": "sm-core.jar",
+      "source_root": "sm-core/src",
+      "java_files": 479,
+      "responsibilities": ["domain-entities", "services", "DAO/persistence", "payment-integrations", "shipping-integrations", "order-workflow", "utilities"],
+      "frameworks": ["Spring Framework", "Hibernate", "JAX-WS", "Axis"],
+      "config": ["sm-core/conf/spring/*.xml", "sm-core/conf/hibernate/*.hbm.xml (81)", "sm-core/conf/properties/*"],
+      "depends_on": [],
+      "evidence": "sm-core/build.xml:10-17; OVERVIEW.md:17"
+    },
+    {
+      "id": "sm-central",
+      "type": "web-application",
+      "language": "java",
+      "artifact": "sm-central.war",
+      "source_root": "sm-central/src",
+      "java_files": 132,
+      "jsp_files": 141,
+      "responsibilities": ["administration-ui", "catalog-management", "order-fulfillment", "store-config", "payment-shipping-tax-config", "soap-web-services"],
+      "frameworks": ["Struts 2", "Apache Tiles", "DWR", "JAX-WS"],
+      "security": "com.salesmanager.core.security.CustomAuthFilter on *.action",
+      "web_services": ["salesManagerCustomerService", "salesManagerInvoiceService"],
+      "depends_on": ["sm-core"],
+      "evidence": "sm-central/WebContent/WEB-INF/web.xml:11-68; README.md:86"
+    },
+    {
+      "id": "sm-shop",
+      "type": "web-application",
+      "language": "java",
+      "artifact": "shop.war",
+      "source_root": "sm-shop/src",
+      "java_files": 66,
+      "jsp_files": 127,
+      "responsibilities": ["storefront", "catalog-browse", "shopping-cart", "checkout", "customer-account", "order-tracking"],
+      "frameworks": ["Struts 2", "Apache Tiles", "DWR"],
+      "depends_on": ["sm-core"],
+      "evidence": "sm-shop/WebContent/WEB-INF/web.xml:22-68; sm-shop/build.xml:62-65"
+    },
+    {
+      "id": "schema",
+      "type": "database",
+      "language": "sql",
+      "source_root": "schema",
+      "responsibilities": ["ddl", "seed-data", "upgrades"],
+      "databases": ["HSQLDB", "MySQL", "Oracle"],
+      "depends_on": [],
+      "evidence": "schema/ (shopizer-build-{hsql,mysql,oracle}); README.md:27-35"
+    }
+  ],
+  "integrations": {
+    "payment": ["Paypal", "BeanStream", "AuthorizeNet", "Moneris", "Psigate", "CreditCardGateway", "COD", "MoneyOrder", "Free"],
+    "shipping": ["CanadaPost", "UPS", "USPS", "Fedex-Express", "Fedex-Ground", "Fedex-Request", "Fedex-Stub"],
+    "social": ["Facebook (FacebookIntegrationFactory)"],
+    "other": ["SimpleCaptcha", "Email/SMTP", "OSCache"]
+  },
+  "notes": [
+    "Dependency JAR versions not committed (lib/** gitignored); inferred from classpath groups + license files.",
+    "Upstream fork github.com/fbeawels/shopizer uses Spring MVC; local v1.1.5 uses Struts 2 (discrepancy flagged in corpus-catalog.md)."
+  ]
+}
