@@ -81,3 +81,30 @@ Validated all Stage 2 artifacts under `02-reverse/**` before indexing.
 **New high-confidence detections (Stage 2): none.** No pipeline HALT triggered.
 
 **Stage 2 result:** zero un-redacted secrets in generated artifacts; payment test guidance enforces sandbox-only.
+
+---
+
+## 6. Stage 3 validation (Target Design) — 2026-06-06
+
+Validated all `03-target/**` artifacts and external research before indexing.
+
+| Artifact | Sensitive content? | Action |
+|----------|-------------------|--------|
+| target-architecture.md, conversion-patterns.md, coding-standards.md | No secrets; design only | indexed |
+| api-specifications.yaml | Documents tokenized payment (PAN explicitly excluded); no secrets | indexed |
+| security-baseline.md, threat-model.md, remediation-backlog.md | References hotspots by path; no secret values | indexed |
+| compliance-matrix.md, data-protection-requirements.md | No PII; policy/control text | indexed |
+
+**External research:** web search/fetch on "OpenClaw" (public articles) — no PII/secrets sent;
+queries contained only generic terms. `example/` config (gitignored) read locally; `.env.example`
+contains **placeholder** values only (e.g., `admin123`, `change-me...`) — flagged as placeholders,
+not real secrets; not indexed into the Twin.
+
+**Design-level redaction guarantees added by target:**
+- DPR-0009: runtime redaction before any OpenAI call or index.
+- Aquaman: credentials never enter LLM context.
+- Tokenization: PAN never stored/sent (RISK-0001).
+
+**New high-confidence detections (Stage 3): none.** No pipeline HALT.
+
+**Stage 3 result:** zero un-redacted secrets; target design embeds redaction/credential-isolation as first-class controls.

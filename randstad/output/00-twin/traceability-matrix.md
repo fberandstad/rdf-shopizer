@@ -123,3 +123,40 @@ US-0001..US-0012 map to FS-0001..FS-0015 (see `user-stories.md`); each carries A
 DEBT-0001..DEBT-0022 (see `tech-debt-report.md`) reference SPEC-0007/0201-0208 and obsolescence-matrix rows. DEBT-0013 (no tests) is mitigated by the Golden Master Suite (TEST-0001..0028).
 
 **Orphan check (Stage 2):** every FS links to ≥1 RULE/REQ and ≥1 TEST; every TEST links to a FS+RULE/REQ; every DEBT links to a component SPEC. No orphan rows. `code-ref` cites local `file:line`. Inferred rules (0004/0019/0021) flagged for confirmation.
+
+---
+
+# Stage 3 extension (Target Design — ShopiClaw) — 2026-06-06
+
+## Legacy capability → target mapping (1:1, no orphans)
+
+| Legacy (FS/RULE) | Target pattern | Artifact ref | DEBT resolved |
+|------------------|----------------|--------------|----------------|
+| FS-0001 Catalog | `searchCatalog`/`getProduct` tools + `ragSearch` | conversion-patterns §6; api §catalog | DEBT-0005/0011 |
+| FS-0002 Cart (RULE-0001..0007) | `getCart`/`addToCart` tools; server pricing | api §cart | DEBT-0006 |
+| FS-0003 Checkout (RULE-0008..0012) | order state machine; `createOrder` | conversion §3; api §checkout | DEBT-0003 |
+| FS-0004 Payment (RULE-0009..0011) | tokenized payment adapters; `payOrder` guarded | ADR-0006; api /checkout/pay | DEBT-0016 |
+| FS-0005 Order/Invoice (RULE-0013/0014) | `getOrderStatus`/`listMyOrders`; masked | api §orders | — |
+| FS-0006 Customer (RULE-0015) | account tools; React UI | conversion §6 | — |
+| FS-0010..0014 Admin (RULE-0016..0020) | guarded admin tools; RBAC | api §admin | DEBT-0015 |
+| FS-0015 SOAP | REST + OpenAPI | ADR-0009; api-specifications.yaml | DEBT-0007 |
+| Persistence (81 .hbm.xml) | Prisma schema + pgvector | ADR-0010 | DEBT-0004 |
+| Build (Ant/JARs) | pnpm+Vite+Docker+SCA | conversion §1 | DEBT-0009/0021 |
+| Runtime (JDK1.5/OSCache) | Node20+Redis, containerized | conversion §1,§4 | DEBT-0001/0008/0019 |
+| (new) Self-knowledge | Embedded Digital Twin RAG; `twinKnowledgeSearch` | ADR-0011; target §4.9; api /knowledge/search | — |
+| (new) Self-reporting | `getSystemHealth` + `getBusinessMetrics` | ADR-0012; target §4.10; api /ready,/metrics/business | — |
+| (new) Agent interop | MCP server | ADR-0013; target §4.11; api /mcp | — |
+
+## ADRs
+
+ADR-0001..ADR-0013 recorded in `target-architecture.md §6` (agentic paradigm, example stack, OpenAI, full rewrite, deterministic money-path, tokenization, ClawBands/Aquaman, Markdown+pgvector memory, REST/OpenAPI, Prisma, embedded-twin-knowledge, named-query analytics, MCP server).
+
+## Security / compliance
+
+| ID range | Description | Artifact |
+|----------|-------------|----------|
+| RISK-0001..0024 | All 46 scan detections + threat findings (incl. MCP/analytics) reconciled (control/accepted) | remediation-backlog.md |
+| DPR-0001..0018 | Data-protection requirements (GDPR/PCI/AI) | data-protection-requirements.md |
+| LLM01..LLM10 | Agent threat controls | security-baseline.md §3; threat-model.md §4 |
+
+**Orphan check (Stage 3):** every legacy FS/RULE maps to a target pattern + artifact; every scan detection maps to a RISK (46/46); every DPR links to a control/RISK. No orphan rows. Acceptance tests (golden master TEST-0001..0028 + new guarded-tool tests) assigned to Stage 4.
