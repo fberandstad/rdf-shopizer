@@ -47,6 +47,23 @@ runs against a seeded, running app — documented in `tests/w0/README.md`.
 required options RULE-0002, persistence RULE-0006, line merge) are enforced in `cart.js`
 and exercised by the Playwright golden master (TEST-0005..0008) against a seeded app.
 
+## Wave 3 — Checkout & Payment (FS-0003/0004, RULE-0008..0012, RISK-0001)
+
+| Area | Test | Maps to | Type | Status |
+|------|------|---------|------|--------|
+| Customer context required (RULE-0008) | TEST-W3-01 | TEST-0009 | unit | green |
+| No-PAN guard / token-only (RISK-0001) | TEST-W3-02 | — | unit | green |
+| Tokenized charge approves (Aquaman key) | TEST-W3-03 | TEST-0011/0012 | unit | green |
+| Declined charge → not-ok (rollback driver) | TEST-W3-04 | TEST-0014 | unit | green |
+| PAN never reaches PSP | TEST-W3-05 | RISK-0001 | unit | green |
+| Payment id masked (RULE-0014) | TEST-W3-06 | TEST-0015 | unit | green |
+| payOrder guarded+off-MCP; createOrder write | TEST-W3-07 | RISK-0015/0022 | unit | green |
+| payOrder schema validation | TEST-W3-08 | FS-0004 | unit | green |
+
+**Total unit suite: 24 passing** (`npm test`). DB-backed flows (order state machine,
+rollback-on-failure, stock decrement, cart clear, owner-scoped reads) are covered by the
+W3 E2E spec (`tests/e2e/checkout.e2e.spec.ts`, TEST-0009..0014) against the live stack.
+
 ## End-to-end (Playwright, modern app) — 2026-06-06
 
 Run against the live stack (Postgres+pgvector container on :15432, API server on :4000,
@@ -63,9 +80,14 @@ chromium && npx playwright test`).
 | TEST-0006 | Invalid qty rejected 422 (RULE-0003) | **pass** |
 | TEST-0007 | Same SKU merges to one line (RULE-0005) | **pass** |
 | TEST-0008 | Update/remove recomputes totals (RULE-0007) | **pass** |
+| TEST-0009 | createOrder requires customer context (RULE-0008) | **pass** |
+| TEST-0011/12 | Tokenized payment places order → PAID, cart cleared | **pass** |
+| TEST-0014 | Declined payment persists NO order (RULE-0012, rollback→404) | **pass** |
+| TEST-PCI | Raw card number rejected 422 (RISK-0001) | **pass** |
+| TEST-0013 | Order owner-scoped read, payment masked, no token leak | **pass** |
 
-**E2E result: 8/8 passing.** Integration smoke (liveness, readiness, login, auth/me,
-catalog, cart merge) also green via curl.
+**E2E result: 13/13 passing** (catalog 4 + cart 4 + checkout 5). Integration smoke
+(liveness, readiness, login, auth/me, catalog, cart merge) also green via curl.
 
 ### Bugs found & fixed during verification
 - **Server crash (P1):** CopilotKit runtime telemetry threw `lambdaClient.send is not a

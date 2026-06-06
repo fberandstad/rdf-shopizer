@@ -8,6 +8,8 @@ import { CartProvider, useCart } from './cart/CartContext';
 import Login from './pages/Login';
 import Storefront from './pages/Storefront';
 import Cart from './pages/Cart';
+import Checkout from './pages/Checkout';
+import Orders from './pages/Orders';
 import Health from './pages/Health';
 import Knowledge from './pages/Knowledge';
 
@@ -27,7 +29,9 @@ function AppContent({ authUser, onLogout, aiEnabled }) {
   const renderPage = () => {
     switch (currentPage) {
       case 'storefront': return <Storefront />;
-      case 'cart': return <Cart />;
+      case 'cart': return <Cart onNavigate={setCurrentPage} />;
+      case 'checkout': return <Checkout onNavigate={setCurrentPage} />;
+      case 'orders': return <Orders />;
       case 'knowledge': return <Knowledge />;
       case 'health': return <Health userRole={authUser?.role} />;
       default: return <Storefront />;

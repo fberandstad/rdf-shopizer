@@ -5,7 +5,7 @@ function price(cents, currency = 'EUR') {
   return new Intl.NumberFormat('en-IE', { style: 'currency', currency }).format((cents || 0) / 100);
 }
 
-export default function Cart() {
+export default function Cart({ onNavigate }) {
   const { cart, update, remove } = useCart();
 
   if (!cart) return <div className="spinner" />;
@@ -65,10 +65,9 @@ export default function Cart() {
         <div className="flex justify-between font-bold text-randstad-blue border-t border-gray-200 pt-2">
           <span>Total</span><span>{price(cart.total, currency)}</span>
         </div>
-        <button className="btn btn-primary w-full mt-4 opacity-60 cursor-not-allowed" disabled title="Checkout arrives in Wave 3">
+        <button className="btn btn-primary w-full mt-4" onClick={() => onNavigate && onNavigate('checkout')}>
           Checkout
         </button>
-        <div className="text-xs text-gray-500 mt-1 text-center">Checkout &amp; payment land in Wave 3.</div>
       </div>
     </div>
   );

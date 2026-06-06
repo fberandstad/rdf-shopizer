@@ -127,6 +127,15 @@ const STATEMENTS = [
      created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
      decided_at TIMESTAMPTZ
    )`,
+
+  // --- Checkout/order fields (FS-0003/0004, RULE-0008..0014) ---
+  // Customer context (RULE-0008) + shipping snapshot; payment_ref is a TOKENIZED
+  // reference only (ADR-0006, RULE-0014) — never a PAN.
+  `ALTER TABLE orders ADD COLUMN IF NOT EXISTS customer_email TEXT`,
+  `ALTER TABLE orders ADD COLUMN IF NOT EXISTS customer_name TEXT`,
+  `ALTER TABLE orders ADD COLUMN IF NOT EXISTS ship_address JSONB NOT NULL DEFAULT '{}'::jsonb`,
+  `ALTER TABLE orders ADD COLUMN IF NOT EXISTS payment_provider TEXT`,
+  `ALTER TABLE orders ADD COLUMN IF NOT EXISTS paid_at TIMESTAMPTZ`,
 ];
 
 async function runMigrations() {

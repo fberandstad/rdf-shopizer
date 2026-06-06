@@ -21,6 +21,8 @@ const knowledgeRoutes = require('./routes/knowledge');
 const agentRoutes = require('./routes/agent');
 const ragRoutes = require('./routes/rag');
 const cartRoutes = require('./routes/cart');
+const checkoutRoutes = require('./routes/checkout');
+const orderRoutes = require('./routes/orders');
 
 const app = express();
 
@@ -58,6 +60,8 @@ app.use('/api', apiLimiter, (req, res, next) => {
 // --- API routes ---
 app.use('/api/catalog', catalogRoutes);
 app.use('/api/cart', cartRoutes);
+app.use('/api/checkout', checkoutRoutes);
+app.use('/api/orders', orderRoutes);
 app.use('/api/ops', opsRoutes);
 app.use('/api/knowledge', knowledgeRoutes);
 app.use('/api/agent', agentRoutes);

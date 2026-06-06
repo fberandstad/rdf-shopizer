@@ -6,6 +6,8 @@ const { pool } = require('./../../db');
 const { search } = require('./../../rag/retriever');
 const metrics = require('./../../routes/metricsQueries');
 const cart = require('./../../cart');
+const orders = require('./../../orders');
+const config = require('./../../config');
 
 const tools = [
   {
@@ -81,6 +83,52 @@ const tools = [
       cart.updateItem(cart.ownerFromCtx(ctx), { itemId, quantity }),
   },
   {
+    name: 'calculateShipping',
+    description: 'Estimate shipping for the current cart/order (flat rate; geo-zone tax/shipping refined later).',
+    sensitivity: 'read',
+    parameters: z.object({}),
+    handler: async () => ({ shipping_cents: config.cart.flatShippingCents, currency: 'EUR' }),
+  },
+  {
+    name: 'createOrder',
+    description: 'Create an order from the current cart (requires customer context). Totals are ' +
+      'server-authoritative; the order awaits payment (RULE-0008/0012).',
+    sensitivity: 'write',
+    parameters: z.object({
+      customer: z.object({ name: z.string(), email: z.string().email() }),
+      shipAddress: z.record(z.any()).optional(),
+    }),
+    handler: async ({ customer, shipAddress = {} }, ctx) =>
+      orders.createOrder(cart.ownerFromCtx(ctx), { customer, shipAddress }),
+  },
+  {
+    name: 'payOrder',
+    description: 'Pay an order with a tokenized payment (NEVER a card number). Guarded: requires ' +
+      'human approval (ClawBands). On failure no order is persisted (RULE-0009..0012).',
+    sensitivity: 'guarded',
+    parameters: z.object({
+      orderId: z.number().int().positive(),
+      paymentToken: z.string(),
+      mode: z.enum(['authorize', 'capture', 'authorizeAndCapture']).optional(),
+    }),
+    handler: async ({ orderId, paymentToken, mode }, ctx) =>
+      orders.payOrder(cart.ownerFromCtx(ctx), { orderId, paymentToken, mode }),
+  },
+  {
+    name: 'getOrderStatus',
+    description: 'Get one of the current user\'s orders by id (owner-scoped; payment masked).',
+    sensitivity: 'read',
+    parameters: z.object({ orderId: z.number().int().positive() }),
+    handler: async ({ orderId }, ctx) => orders.getOrder(cart.ownerFromCtx(ctx), orderId),
+  },
+  {
+    name: 'listMyOrders',
+    description: 'List the current user\'s orders (owner-scoped).',
+    sensitivity: 'read',
+    parameters: z.object({}),
+    handler: async (_args, ctx) => orders.listOrders(cart.ownerFromCtx(ctx)),
+  },
+  {
     name: 'ragSearch',
     description: 'Semantic search over the product/policy knowledge base.',
     sensitivity: 'read',
@@ -125,7 +173,8 @@ const tools = [
 const byName = Object.fromEntries(tools.map(t => [t.name, t]));
 
 // Tools safe to expose over MCP by default (read-only, no money-path).
-const MCP_SAFE = ['searchCatalog', 'getProduct', 'listCategories', 'ragSearch',
-  'twinKnowledgeSearch', 'getSystemHealth', 'getBusinessMetrics'];
+// Owner-scoped order reads stay OFF MCP (they depend on a user session, not an MCP client).
+const MCP_SAFE = ['searchCatalog', 'getProduct', 'listCategories', 'calculateShipping',
+  'ragSearch', 'twinKnowledgeSearch', 'getSystemHealth', 'getBusinessMetrics'];
 
 module.exports = { tools, byName, MCP_SAFE };

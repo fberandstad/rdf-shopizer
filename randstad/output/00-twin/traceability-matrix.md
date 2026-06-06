@@ -222,3 +222,27 @@ ADR-0001..ADR-0013 recorded in `target-architecture.md §6` (agentic paradigm, e
 | Cart UI + mini-cart | `client/pages/Cart.jsx`, `cart/CartContext.jsx`, `ProductDetail.jsx`, `Sidebar.jsx` | TEST-0005/0008 | (manual/E2E) |
 
 **Orphan check (W2):** rules live once in `cart.js`, shared by REST + agent tools (no LLM bypass, ADR-0005). Every RULE maps to code + a golden-master TEST; schema-enforceable rules also have unit tests (`npm test` → 16/16). Tax simplified to a configurable rate (full geo-zone RULE-0019 deferred to checkout wave, flagged). No orphan rows; legacy source read-only.
+
+---
+
+# Stage 4 extension — Wave 3 (Checkout & Payment) — 2026-06-06
+
+## FS-0003/0004 / RULE-0008..0014 / RISK-0001 → generated code → test
+
+| Rule / capability | Generated file(s) (`04-forward/converted/`) | Golden master | Unit |
+|-------------------|----------------------------------------------|---------------|------|
+| RULE-0008 customer context required | `server/orders.js#assertCustomer/createOrder` | TEST-0009 | TEST-W3-01 |
+| RULE-0009 payment per mode (auth/capture) | `server/orders.js#payOrder`, `payments/mock.js` | TEST-0012 | TEST-W3-03 |
+| RULE-0010/0011 provider abstraction | `server/payments/index.js` (adapter registry) | TEST-0013 | (adapter) |
+| RULE-0012 order persisted only on success | `server/orders.js#payOrder/rollbackOrder` | TEST-0014 | TEST-W3-04 |
+| RULE-0013 order owner-scoped | `server/orders.js#getOrder`, `routes/orders.js` | TEST-0016 | (E2E) |
+| RULE-0014 payment id masked | `server/orders.js#maskPaymentRef` | TEST-0015 | TEST-W3-06 |
+| RULE-0022 confirmation on completion | `server/orders.js#notifyOrderConfirmed` | — | (stub) |
+| RISK-0001/DEBT-0016 no PAN (tokenized) | `server/payments/index.js#looksLikePan/assertToken` | — | TEST-W3-02/05 |
+| ADR-0007 Aquaman credential isolation | `server/payments/index.js` (useCredential) | — | TEST-W3-03 |
+| RISK-0015 payOrder guarded HITL (agent) | `tools/index.js` (`payOrder` guarded), `clawbands.js` | — | TEST-W3-07 |
+| Order state machine API | `routes/checkout.js` (order/pay, 402 on decline), `routes/orders.js` | TEST-0009..0017 | (E2E) |
+| Checkout/Orders UI | `client/pages/Checkout.jsx`, `Orders.jsx`, `Cart.jsx`, `Sidebar.jsx` | TEST-0011/0015 | (E2E) |
+| E2E coverage | `tests/e2e/checkout.e2e.spec.ts` | TEST-0009..0014 | — |
+
+**Orphan check (W3):** order rules live once in `orders.js`/`payments/`, shared by REST (human-present) + agent tool (`payOrder` guarded via ClawBands HITL). No PAN ever enters the system (token-only, Luhn-reject); PSP key used only inside Aquaman; payment ids masked. Payment failure rolls back so no completed order persists (RULE-0012). Unit suite `npm test` → 24/24; DB/UI flows in the W3 E2E spec. No orphan rows; legacy source read-only.
