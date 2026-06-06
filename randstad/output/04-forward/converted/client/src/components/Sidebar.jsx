@@ -1,13 +1,14 @@
 import { useState } from 'react';
-import { Store, BookOpen, Activity, Moon, Sun, Menu, ShoppingBag } from 'lucide-react';
+import { Store, BookOpen, Activity, Moon, Sun, Menu, ShoppingBag, ShoppingCart } from 'lucide-react';
 
 const NAV = [
   { id: 'storefront', label: 'Storefront', icon: Store },
+  { id: 'cart', label: 'Cart', icon: ShoppingCart },
   { id: 'knowledge', label: 'Knowledge', icon: BookOpen },
   { id: 'health', label: 'Health & Metrics', icon: Activity, adminOnly: true },
 ];
 
-export default function Sidebar({ currentPage, onNavigate, darkMode, onToggleDark, userRole }) {
+export default function Sidebar({ currentPage, onNavigate, darkMode, onToggleDark, userRole, cartCount = 0 }) {
   const [collapsed, setCollapsed] = useState(false);
   const items = NAV.filter((n) => !n.adminOnly || userRole === 'admin');
 
@@ -33,6 +34,11 @@ export default function Sidebar({ currentPage, onNavigate, darkMode, onToggleDar
           >
             <Icon size={18} className="shrink-0" />
             <span className="nav-label">{label}</span>
+            {id === 'cart' && cartCount > 0 && (
+              <span className="ml-auto nav-label text-xs bg-randstad-cyan text-randstad-dark font-bold rounded-full px-2 py-0.5">
+                {cartCount}
+              </span>
+            )}
           </button>
         ))}
       </nav>

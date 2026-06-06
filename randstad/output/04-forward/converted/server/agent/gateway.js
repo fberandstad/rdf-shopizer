@@ -1,6 +1,13 @@
 // Agent Gateway — wires the ShopiClaw agent to CopilotKit using the OpenAI adapter (ADR-0003).
 // Read/safe tools are registered as CopilotKit actions; every call runs through ClawBands
 // (audit + guarded-tool approval). Guarded tools surface an APPROVAL_REQUIRED signal.
+
+// Disable CopilotKit telemetry BEFORE the runtime loads: this version's telemetry client
+// throws (`lambdaClient.send is not a function`) on an async tick and would crash the
+// process. We also avoid phoning home with usage data (privacy). Must precede the require.
+process.env.COPILOTKIT_TELEMETRY_DISABLED = process.env.COPILOTKIT_TELEMETRY_DISABLED || 'true';
+process.env.DO_NOT_TRACK = process.env.DO_NOT_TRACK || '1';
+
 const {
   CopilotRuntime,
   OpenAIAdapter,
@@ -59,6 +66,7 @@ function createCopilotHandler() {
       actor: req.user ? String(req.user.id) : 'anonymous',
       role: req.user?.role || 'customer',
       channel: 'webchat',
+      sessionKey: req.sessionID || null,
     };
     const runtime = new CopilotRuntime({ actions: buildActions(() => ctx) });
     const handler = copilotRuntimeNodeHttpEndpoint({

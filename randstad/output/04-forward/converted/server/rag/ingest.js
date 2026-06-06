@@ -27,6 +27,42 @@ async function ingestDocument({ collection, ref, content, metadata = {} }) {
   }
 }
 
+// Build a searchable text blob for a product (pure → unit-testable).
+function productToText(p) {
+  const price = ((p.price_cents || 0) / 100).toFixed(2);
+  const attrs = p.attributes && typeof p.attributes === 'object'
+    ? Object.entries(p.attributes).map(([k, v]) => `${k}: ${v}`).join(', ')
+    : '';
+  return [
+    `Product: ${p.name}`,
+    `SKU: ${p.sku}`,
+    p.category_name ? `Category: ${p.category_name}` : '',
+    `Price: ${price} ${p.currency || 'EUR'}`,
+    p.description ? `Description: ${p.description}` : '',
+    attrs ? `Attributes: ${attrs}` : '',
+  ].filter(Boolean).join('\n');
+}
+
+// Index all enabled products into the 'catalog' collection for ragSearch (FS-0001).
+async function ingestCatalog() {
+  const { rows } = await pool.query(
+    `SELECT p.id, p.sku, p.name, p.description, p.price_cents, p.currency,
+            p.attributes, c.name AS category_name
+     FROM product p LEFT JOIN category c ON c.id = p.category_id
+     WHERE p.enabled = true`);
+  await pool.query(`DELETE FROM rag_document WHERE collection = 'catalog'`);
+  for (const p of rows) {
+    await ingestDocument({
+      collection: 'catalog',
+      ref: p.sku,
+      content: productToText(p),
+      metadata: { sku: p.sku, productId: p.id, source: `product:${p.sku}` },
+    });
+  }
+  console.log(`[rag] ingested ${rows.length} catalog products`);
+  return rows.length;
+}
+
 // Ingest the Twin knowledge corpus (00-twin / 02-reverse / 03-target) for twinKnowledgeSearch.
 async function ingestTwinKnowledge(twinRoot) {
   const roots = ['00-twin', '02-reverse', '03-target'].map(d => path.join(twinRoot, d));
@@ -57,4 +93,4 @@ function* walk(dir) {
   }
 }
 
-module.exports = { ingestDocument, ingestTwinKnowledge };
+module.exports = { ingestDocument, ingestCatalog, ingestTwinKnowledge, productToText };

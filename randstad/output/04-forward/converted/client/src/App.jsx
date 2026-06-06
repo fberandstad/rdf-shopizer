@@ -4,14 +4,17 @@ import { CopilotSidebar } from '@copilotkit/react-ui';
 import { COPILOT_RUNTIME_URL, api } from './config';
 import Sidebar from './components/Sidebar';
 import UserMenu from './components/UserMenu';
+import { CartProvider, useCart } from './cart/CartContext';
 import Login from './pages/Login';
 import Storefront from './pages/Storefront';
+import Cart from './pages/Cart';
 import Health from './pages/Health';
 import Knowledge from './pages/Knowledge';
 
 function AppContent({ authUser, onLogout, aiEnabled }) {
   const [currentPage, setCurrentPage] = useState('storefront');
   const [darkMode, setDarkMode] = useState(false);
+  const { count: cartCount } = useCart();
 
   const toggleDark = useCallback(() => {
     setDarkMode((d) => {
@@ -24,6 +27,7 @@ function AppContent({ authUser, onLogout, aiEnabled }) {
   const renderPage = () => {
     switch (currentPage) {
       case 'storefront': return <Storefront />;
+      case 'cart': return <Cart />;
       case 'knowledge': return <Knowledge />;
       case 'health': return <Health userRole={authUser?.role} />;
       default: return <Storefront />;
@@ -38,6 +42,7 @@ function AppContent({ authUser, onLogout, aiEnabled }) {
         darkMode={darkMode}
         onToggleDark={toggleDark}
         userRole={authUser?.role}
+        cartCount={cartCount}
       />
       <div className="flex-1 flex flex-col overflow-hidden">
         <header className="flex items-center justify-between px-6 py-3 border-b bg-white">
@@ -84,11 +89,13 @@ export default function App() {
 
   return (
     <CopilotKit runtimeUrl={COPILOT_RUNTIME_URL} showDevConsole={false}>
-      <AppContent
-        authUser={authUser}
-        aiEnabled={aiEnabled}
-        onLogout={async () => { await api('/auth/logout', { method: 'POST' }); setAuthUser(null); }}
-      />
+      <CartProvider>
+        <AppContent
+          authUser={authUser}
+          aiEnabled={aiEnabled}
+          onLogout={async () => { await api('/auth/logout', { method: 'POST' }); setAuthUser(null); }}
+        />
+      </CartProvider>
     </CopilotKit>
   );
 }

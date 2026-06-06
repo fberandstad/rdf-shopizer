@@ -40,6 +40,16 @@ module.exports = {
     provider: process.env.PSP_PROVIDER || 'mock',
     apiKey: process.env.PSP_API_KEY || '',
   },
+  rag: {
+    // Root of the Digital Twin corpus (00-twin / 02-reverse / 03-target).
+    twinRoot: process.env.TWIN_ROOT || require('path').resolve(__dirname, '..', '..', '..', '..'),
+  },
+  cart: {
+    // Server-authoritative pricing inputs (RULE-0007). Tax in basis points (e.g. 2000 = 20%).
+    // Full geo-zone tax (RULE-0019) is deferred to the checkout wave.
+    taxRateBps: parseInt(process.env.TAX_RATE_BPS || '0', 10),
+    flatShippingCents: parseInt(process.env.SHIPPING_FLAT_CENTS || '0', 10),
+  },
 };
 
 function safeJson(s, fallback) {

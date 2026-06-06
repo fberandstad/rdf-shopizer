@@ -5,6 +5,7 @@ const { z } = require('zod');
 const { pool } = require('./../../db');
 const { search } = require('./../../rag/retriever');
 const metrics = require('./../../routes/metricsQueries');
+const cart = require('./../../cart');
 
 const tools = [
   {
@@ -26,14 +27,58 @@ const tools = [
   },
   {
     name: 'getProduct',
-    description: 'Get a single product by SKU.',
+    description: 'Get a single product by SKU (name, price, attributes, stock).',
     sensitivity: 'read',
     parameters: z.object({ sku: z.string() }),
     handler: async ({ sku }) => {
-      const { rows } = await pool.query('SELECT * FROM product WHERE sku=$1 AND enabled=true', [sku]);
+      const { rows } = await pool.query(
+        `SELECT p.*, c.code AS category_code, c.name AS category_name
+         FROM product p LEFT JOIN category c ON c.id = p.category_id
+         WHERE p.sku=$1 AND p.enabled=true`, [sku]);
       if (!rows[0]) throw new Error('product not found');
       return rows[0];
     },
+  },
+  {
+    name: 'listCategories',
+    description: 'List catalog categories (code, name, parent) for browsing/filtering.',
+    sensitivity: 'read',
+    parameters: z.object({}),
+    handler: async () => {
+      const { rows } = await pool.query(
+        `SELECT c.id, c.code, c.name, c.parent_id,
+                (SELECT count(*) FROM product p WHERE p.category_id = c.id AND p.enabled=true)::int AS product_count
+         FROM category c ORDER BY c.name`);
+      return rows;
+    },
+  },
+  {
+    name: 'getCart',
+    description: 'Get the current shopping cart with server-computed totals (FS-0002).',
+    sensitivity: 'read',
+    parameters: z.object({}),
+    handler: async (_args, ctx) => cart.getCart(cart.ownerFromCtx(ctx)),
+  },
+  {
+    name: 'addToCart',
+    description: 'Add a product (by SKU) to the cart. Enforces stock, required options, ' +
+      'positive quantity, and line merge; totals are recomputed server-side (RULE-0001..0007).',
+    sensitivity: 'write',
+    parameters: z.object({
+      sku: z.string(),
+      quantity: z.number().int().positive().default(1),
+      options: z.record(z.any()).optional(),
+    }),
+    handler: async ({ sku, quantity = 1, options = {} }, ctx) =>
+      cart.addItem(cart.ownerFromCtx(ctx), { sku, quantity, options }),
+  },
+  {
+    name: 'updateCart',
+    description: 'Update a cart line quantity (0 removes it). Totals recomputed server-side (RULE-0007).',
+    sensitivity: 'write',
+    parameters: z.object({ itemId: z.number().int().positive(), quantity: z.number().int().min(0) }),
+    handler: async ({ itemId, quantity }, ctx) =>
+      cart.updateItem(cart.ownerFromCtx(ctx), { itemId, quantity }),
   },
   {
     name: 'ragSearch',
@@ -80,7 +125,7 @@ const tools = [
 const byName = Object.fromEntries(tools.map(t => [t.name, t]));
 
 // Tools safe to expose over MCP by default (read-only, no money-path).
-const MCP_SAFE = ['searchCatalog', 'getProduct', 'ragSearch', 'twinKnowledgeSearch',
-  'getSystemHealth', 'getBusinessMetrics'];
+const MCP_SAFE = ['searchCatalog', 'getProduct', 'listCategories', 'ragSearch',
+  'twinKnowledgeSearch', 'getSystemHealth', 'getBusinessMetrics'];
 
 module.exports = { tools, byName, MCP_SAFE };

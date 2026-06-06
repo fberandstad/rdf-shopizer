@@ -19,6 +19,8 @@ const catalogRoutes = require('./routes/catalog');
 const opsRoutes = require('./routes/ops');
 const knowledgeRoutes = require('./routes/knowledge');
 const agentRoutes = require('./routes/agent');
+const ragRoutes = require('./routes/rag');
+const cartRoutes = require('./routes/cart');
 
 const app = express();
 
@@ -46,7 +48,8 @@ app.use('/api/copilotkit', createCopilotHandler());
 const apiLimiter = rateLimit({ windowMs: 60_000, max: 300 });
 app.use('/api', apiLimiter, (req, res, next) => {
   if (req.path === '/health' || req.path === '/copilotkit-health' ||
-      req.path.startsWith('/copilotkit') || req.path === '/ops/health') {
+      req.path.startsWith('/copilotkit') ||
+      req.path === '/ops/health' || req.path === '/ops/ready') {
     return next();
   }
   return requireAuth(req, res, next);
@@ -54,9 +57,11 @@ app.use('/api', apiLimiter, (req, res, next) => {
 
 // --- API routes ---
 app.use('/api/catalog', catalogRoutes);
+app.use('/api/cart', cartRoutes);
 app.use('/api/ops', opsRoutes);
 app.use('/api/knowledge', knowledgeRoutes);
 app.use('/api/agent', agentRoutes);
+app.use('/api/rag', ragRoutes);
 
 // --- Static client (production) ---
 app.use(express.static(config.clientDist));

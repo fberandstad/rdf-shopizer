@@ -184,3 +184,41 @@ ADR-0001..ADR-0013 recorded in `target-architecture.md §6` (agentic paradigm, e
 | Container/build | `Dockerfile`, `docker-compose.yml`, `.env.example` | `node --check` (22/22 pass) |
 
 **Orphan check (W0):** every generated module traces to a target ADR/pattern and a test (unit now, integration/E2E gated by DB/UI in W1+). No orphan rows. Legacy source untouched (read-only).
+
+---
+
+# Stage 4 extension — Wave 1 (Catalog & RAG) — 2026-06-06
+
+## FS-0001 → generated code → test
+
+| Capability | Generated file(s) (`04-forward/converted/`) | Golden master | Unit |
+|------------|----------------------------------------------|---------------|------|
+| Catalog landing / search | `server/agent/tools/index.js` (`searchCatalog`), `routes/catalog.js`, `client/pages/Storefront.jsx` | TEST-0001, TEST-0004 | TEST-W1-03 |
+| Browse by category | `tools/index.js` (`listCategories`), `routes/catalog.js#/categories`, Storefront category chips | TEST-0002 | TEST-W1-01 |
+| Product details | `tools/index.js` (`getProduct`, +category), `routes/catalog.js#/products/:sku`, `client/pages/ProductDetail.jsx` | TEST-0003 | TEST-W1-02 |
+| Catalog RAG index | `rag/ingest.js` (`ingestCatalog`/`productToText`), `rag/ingest-cli.js`, `routes/rag.js` (admin) | — | TEST-W1-04/05 |
+| Agent catalog context | `client/pages/Storefront.jsx` (`useCopilotReadable`) | — | (manual) |
+| MCP exposure (read-only) | `tools/index.js` `MCP_SAFE` += `listCategories` | — | TEST-W0-02 |
+
+**Orphan check (W1):** every FS-0001 sub-capability maps to code + a golden-master TEST + a unit test (`npm test` → 10/10). RAG ingest applies redaction (DPR-0009) before embedding. Admin-only `/api/rag/ingest` (RBAC). No orphan rows; legacy source read-only.
+
+---
+
+# Stage 4 extension — Wave 2 (Cart) — 2026-06-06
+
+## FS-0002 / RULE-0001..0007 → generated code → test
+
+| Rule / capability | Generated file(s) (`04-forward/converted/`) | Golden master | Unit |
+|-------------------|----------------------------------------------|---------------|------|
+| RULE-0001 product exists & enabled | `server/cart.js#addItem` | TEST-0005 | (DB path) |
+| RULE-0002 required options present | `server/cart.js#addItem` (`requiredOptions`) | TEST-0005 | (DB path) |
+| RULE-0003 positive integer quantity | `server/cart.js` + `tools` zod (`addToCart`) | TEST-0006 | TEST-W2-04 |
+| RULE-0004 stock availability | `server/cart.js#addItem/updateItem` | TEST-0005 | (DB path) |
+| RULE-0005 same SKU+options merges | `server/cart.js#optionsKey/addItem` | TEST-0007 | TEST-W2-03 |
+| RULE-0006 persist for logged-in | `server/cart.js#resolveCart` (user_id) | — | (DB path) |
+| RULE-0007 server-authoritative totals | `server/cart.js#computeTotals/toView` | TEST-0005, TEST-0008 | TEST-W2-01/02 |
+| Cart REST API | `server/routes/cart.js` (GET/POST/PATCH/DELETE, 422 on validation) | TEST-0008 | — |
+| Cart agent tools | `tools/index.js` (`getCart` read; `addToCart`/`updateCart` write, off MCP) | — | TEST-W2-06 |
+| Cart UI + mini-cart | `client/pages/Cart.jsx`, `cart/CartContext.jsx`, `ProductDetail.jsx`, `Sidebar.jsx` | TEST-0005/0008 | (manual/E2E) |
+
+**Orphan check (W2):** rules live once in `cart.js`, shared by REST + agent tools (no LLM bypass, ADR-0005). Every RULE maps to code + a golden-master TEST; schema-enforceable rules also have unit tests (`npm test` → 16/16). Tax simplified to a configurable rate (full geo-zone RULE-0019 deferred to checkout wave, flagged). No orphan rows; legacy source read-only.

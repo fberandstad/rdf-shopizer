@@ -20,4 +20,10 @@ router.get('/products/:sku', async (req, res) => {
   } catch (e) { res.status(404).json({ error: e.message }); }
 });
 
+router.get('/categories', async (req, res) => {
+  try {
+    res.json(await byName.listCategories.handler({}));
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
 module.exports = router;
