@@ -78,3 +78,48 @@
 | REQ-0021 | KPIs | Stage 2/3 |
 
 **Orphan check (Stage 1):** all seeded rows trace to a discovery answer + source cite or are explicitly flagged UNKNOWN. No orphan rows. `TEST-####` linkage begins in Stage 2.
+
+---
+
+# Stage 2 extension (Digital Twin) — 2026-06-06
+
+## Architecture specs (SPEC)
+
+| SPEC | Description | code-ref | back-link |
+|------|-------------|----------|-----------|
+| SPEC-0201 | Layered modular-monolith style | OVERVIEW.md:13-31; web.xml | SPEC-0023 |
+| SPEC-0202 | Container topology (3 WARs + DB) | sm-*/build.xml | SPEC-0024 |
+| SPEC-0203 | sm-core component model | sm-core/src/.../service/** | SPEC-0027 |
+| SPEC-0204 | Order workflow pipelines | sm-core-workflow-beans.xml:21-46 | SPEC-0025 |
+| SPEC-0205 | PaymentModule strategy | PaymentModule.java:38-67 | SPEC-0017 |
+| SPEC-0206 | Integration points | module/impl/integration/** | SPEC-0041 |
+| SPEC-0207 | Security cross-cutting | sm-central/.../web.xml:11-19 | SPEC-0054 |
+| SPEC-0208 | Caching/i18n | oscache.properties; web.xml | SPEC-0062 |
+
+## Functional → Rules → Tests
+
+| FS | RULEs | TESTs | code-ref | Status |
+|----|-------|-------|----------|--------|
+| FS-0001 Catalog | RULE-0007 | TEST-0001..0004 | catalog/*Action.java | linked |
+| FS-0002 Cart | RULE-0001..0007 | TEST-0005..0008 | ShoppingCartAction; CAST addToCart | linked |
+| FS-0003 Checkout | RULE-0008..0012 | TEST-0009..0011 | checkout/flow/**; workflow-beans | linked |
+| FS-0004 Payment | RULE-0009..0012 | TEST-0012..0014 | PaymentModule.java | linked (sandbox) |
+| FS-0005 Order/Invoice | RULE-0013,0014,0020 | TEST-0015..0017 | ComitOrderAction; InvoiceAction | linked |
+| FS-0006 Customer | RULE-0015 | TEST-0018..0021 | customer/profile/** | linked |
+| FS-0007 Subscription | — | TEST-0022 | SubscriptionAction | linked |
+| FS-0009 Downloads | RULE-0015 | TEST-0021 | FilesAction | linked |
+| FS-0010 Admin auth | RULE-0016,0017 | TEST-0023,0024 | CustomAuthFilter; web.xml | linked |
+| FS-0011 Catalog mgmt | — | TEST-0025 | sm-central catalog actions | linked |
+| FS-0012 Order/invoice mgmt | — | TEST-0026 | struts-order/invoice.xml | linked |
+| FS-0013/0014 Config | RULE-0018,0019,0020 | TEST-0027 | MERCHANT_CONFIGURATION | linked |
+| FS-0015 SOAP | SPEC-0041 | TEST-0028 | web.xml:54-68 | linked |
+
+## User stories
+
+US-0001..US-0012 map to FS-0001..FS-0015 (see `user-stories.md`); each carries AC = current behavior locked by the TEST rows above.
+
+## Technical debt (DEBT) → drivers
+
+DEBT-0001..DEBT-0022 (see `tech-debt-report.md`) reference SPEC-0007/0201-0208 and obsolescence-matrix rows. DEBT-0013 (no tests) is mitigated by the Golden Master Suite (TEST-0001..0028).
+
+**Orphan check (Stage 2):** every FS links to ≥1 RULE/REQ and ≥1 TEST; every TEST links to a FS+RULE/REQ; every DEBT links to a component SPEC. No orphan rows. `code-ref` cites local `file:line`. Inferred rules (0004/0019/0021) flagged for confirmation.

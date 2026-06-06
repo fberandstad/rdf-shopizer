@@ -1,0 +1,13 @@
+{
+  "name": "shopizer-golden-master",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Golden-master regression suite characterizing Shopizer v1.1.5 legacy behavior",
+  "scripts": {
+    "test": "playwright test",
+    "report": "playwright show-report"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.48.0"
+  }
+}

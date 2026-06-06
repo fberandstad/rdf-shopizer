@@ -59,3 +59,25 @@ values, card numbers, or personal data.
 
 **Stage 1 result:** zero un-redacted secrets left the workspace; all scan-report
 categories handled or deferred with rationale.
+
+---
+
+## 5. Stage 2 validation (Digital Twin) — 2026-06-06
+
+Validated all Stage 2 artifacts under `02-reverse/**` before indexing.
+
+| Artifact | Sensitive content? | Action |
+|----------|-------------------|--------|
+| architecture-as-is.md, data-flows.md, dependency-graph.json | No secrets; references hotspot files by path only | indexed |
+| functional-specifications.md, business-rules.md, user-stories.md | No PII/secrets; describe behavior | indexed |
+| tech-debt-report.md, obsolescence-matrix.md | No secrets; version/CVE families only | indexed |
+| test-cases.md, regression-suite/** | No live credentials; payment tests use **env-var sandbox** creds only | indexed |
+
+**Controls enforced in Stage 2 outputs:**
+- Card-data flow (DF in `data-flows.md`) describes `CreditCardUtil`/`EncryptionUtil` by reference only — no card values, keys, or `SecretKeySpec` material embedded (R1–R4 still metadata-only).
+- Regression suite forbids live card data; gateway creds via env vars (never committed) — reinforced in `regression-suite/README.md`.
+- `MERCHANT_CONFIGURATION` encrypted-credential handling documented as a flow, not extracted.
+
+**New high-confidence detections (Stage 2): none.** No pipeline HALT triggered.
+
+**Stage 2 result:** zero un-redacted secrets in generated artifacts; payment test guidance enforces sandbox-only.
