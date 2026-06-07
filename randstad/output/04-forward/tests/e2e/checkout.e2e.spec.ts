@@ -19,6 +19,29 @@ test.describe('Checkout & Payment (new app)', () => {
     expect(res.status()).toBe(422);
   });
 
+  test('TEST-0010 shipping method selection changes the order total (FS-0003)', async ({ page }) => {
+    // Methods are listed server-side with authoritative costs.
+    const ship = await (await page.request.get('/api/checkout/shipping')).json();
+    expect(Array.isArray(ship.options)).toBe(true);
+    const std = ship.options.find((o: any) => o.code === 'STANDARD');
+    const exp = ship.options.find((o: any) => o.code === 'EXPRESS');
+    expect(exp.cents).toBeGreaterThan(std.cents);
+
+    const standard = await (await page.request.post('/api/checkout/order',
+      { data: { customer, shippingMethod: 'STANDARD' } })).json();
+    const express = await (await page.request.post('/api/checkout/order',
+      { data: { customer, shippingMethod: 'EXPRESS' } })).json();
+    // Subtotal identical; shipping (and therefore total) reflects the chosen method.
+    expect(express.shipping).toBe(exp.cents);
+    expect(standard.shipping).toBe(std.cents);
+    expect(express.total - standard.total).toBe(exp.cents - std.cents);
+
+    // Unknown method is rejected server-side (RULE-0007).
+    const bad = await page.request.post('/api/checkout/order',
+      { data: { customer, shippingMethod: 'TELEPORT' } });
+    expect(bad.status()).toBe(422);
+  });
+
   test('TEST-0011/0012 successful tokenized payment places order (PAID)', async ({ page }) => {
     const order = await (await page.request.post('/api/checkout/order', { data: { customer } })).json();
     expect(order.status).toBe('AWAITING_PAYMENT');

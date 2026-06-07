@@ -30,7 +30,9 @@ async function seed() {
     await pool.query(
       `INSERT INTO product (sku, name, price_cents, category_id, stock, digital, download_path)
        VALUES ($1,$2,$3,$4,$5,$6,$7)
-       ON CONFLICT (sku) DO UPDATE SET digital=EXCLUDED.digital, download_path=EXCLUDED.download_path`,
+       ON CONFLICT (sku) DO UPDATE SET name=EXCLUDED.name, price_cents=EXCLUDED.price_cents,
+         category_id=EXCLUDED.category_id, stock=EXCLUDED.stock,
+         digital=EXCLUDED.digital, download_path=EXCLUDED.download_path`,
       [p.sku, p.name, p.price_cents, catId[p.category], p.stock, !!p.digital, p.download_path || null]);
   }
   console.log(`[seed] ${CATEGORIES.length} categories, ${PRODUCTS.length} products`);

@@ -7,6 +7,7 @@ const assert = require('node:assert/strict');
 const SERVER = '../../converted/server';
 const payments = require(`${SERVER}/payments`);
 const orders = require(`${SERVER}/orders`);
+const cart = require(`${SERVER}/cart`);
 const { byName, MCP_SAFE } = require(`${SERVER}/agent/tools`);
 const { isGuarded } = require(`${SERVER}/agent/clawbands`);
 
@@ -53,6 +54,23 @@ test('TEST-W3-07: payOrder is guarded (ClawBands HITL) and off MCP; createOrder 
   assert.ok(!MCP_SAFE.includes('createOrder'), 'createOrder not exposed over MCP');
   assert.equal(byName.createOrder.sensitivity, 'write');
   assert.ok(MCP_SAFE.includes('calculateShipping'), 'calculateShipping (read) on MCP');
+});
+
+test('TEST-W3-09 (→TEST-0010): shipping methods are selectable with distinct server-side costs (FS-0003)', () => {
+  const opts = cart.shippingOptions();
+  assert.ok(opts.length >= 2, 'at least two shipping methods offered');
+  const std = cart.shippingCostFor('STANDARD');
+  const exp = cart.shippingCostFor('EXPRESS');
+  assert.equal(std.code, 'STANDARD');
+  assert.equal(exp.code, 'EXPRESS');
+  assert.ok(exp.cents > std.cents, 'express costs more than standard');
+  // Default applies when no method is supplied, and unknown codes are rejected (RULE-0007).
+  assert.equal(cart.shippingCostFor().code, 'STANDARD');
+  assert.throws(() => cart.shippingCostFor('TELEPORT'), /unknown shipping method/);
+  // createOrder tool accepts an optional shippingMethod.
+  assert.doesNotThrow(() => byName.createOrder.parameters.parse({
+    customer: { name: 'Ada', email: 'ada@x.io' }, shippingMethod: 'EXPRESS',
+  }));
 });
 
 test('TEST-W3-08: payOrder schema rejects missing token / bad orderId', () => {

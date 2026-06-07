@@ -64,9 +64,16 @@ module.exports = {
   },
   cart: {
     // Server-authoritative pricing inputs (RULE-0007). Tax in basis points (e.g. 2000 = 20%).
-    // Full geo-zone tax (RULE-0019) is deferred to the checkout wave.
+    // Full geo-zone tax (RULE-0019) is deferred; flat tax rate + selectable shipping methods.
     taxRateBps: parseInt(process.env.TAX_RATE_BPS || '0', 10),
     flatShippingCents: parseInt(process.env.SHIPPING_FLAT_CENTS || '0', 10),
+    // Selectable shipping methods (FS-0003, TEST-0010). Server-authoritative costs (minor units).
+    // STANDARD is free (preserves the legacy default flat rate); EXPRESS adds a surcharge.
+    shippingMethods: safeJson(process.env.SHIPPING_METHODS, null) || {
+      STANDARD: { label: 'Standard (3-5 days)', cents: parseInt(process.env.SHIPPING_FLAT_CENTS || '0', 10) },
+      EXPRESS: { label: 'Express (next day)', cents: 1500 },
+    },
+    defaultShippingMethod: process.env.DEFAULT_SHIPPING_METHOD || 'STANDARD',
   },
 };
 

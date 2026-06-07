@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { CreditCard, ShieldCheck, ArrowLeft } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { CreditCard, ShieldCheck, ArrowLeft, Truck } from 'lucide-react';
 import { api } from '../config';
 import { useCart } from '../cart/CartContext';
 
@@ -13,6 +13,8 @@ export default function Checkout({ onNavigate }) {
   const [address, setAddress] = useState({ line1: '', city: '', postalCode: '', country: 'FR' });
   // Tokenized payment only — this is a provider token / hosted-field nonce, NEVER a card number.
   const [paymentToken, setPaymentToken] = useState('tok_test_visa');
+  const [methods, setMethods] = useState([]);
+  const [shipMethod, setShipMethod] = useState('STANDARD');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState(null);
   const [done, setDone] = useState(null);
@@ -20,12 +22,26 @@ export default function Checkout({ onNavigate }) {
   const currency = cart?.currency || 'EUR';
   const empty = !cart?.items?.length;
 
+  // Load server-authoritative shipping methods (FS-0003, TEST-0010).
+  useEffect(() => {
+    api('/api/checkout/shipping')
+      .then((r) => {
+        setMethods(r.options || []);
+        if (r.options?.length) setShipMethod(r.options[0].code);
+      })
+      .catch(() => {});
+  }, []);
+
+  // Totals reflect the chosen method's cost; the server recomputes authoritatively on /order.
+  const shippingCents = methods.find((m) => m.code === shipMethod)?.cents ?? (cart?.shipping || 0);
+  const totalCents = (cart?.subtotal || 0) + (cart?.tax || 0) + shippingCents;
+
   const submit = async (e) => {
     e.preventDefault();
     setBusy(true); setError(null);
     try {
       const order = await api('/api/checkout/order', {
-        method: 'POST', body: JSON.stringify({ customer, shipAddress: address }),
+        method: 'POST', body: JSON.stringify({ customer, shipAddress: address, shippingMethod: shipMethod }),
       });
       const paid = await api('/api/checkout/pay', {
         method: 'POST', body: JSON.stringify({ orderId: order.id, paymentToken }),
@@ -74,6 +90,15 @@ export default function Checkout({ onNavigate }) {
             <input className="w-1/2 border border-gray-200 rounded px-3 py-2 mb-3" placeholder="Postal code" required
               value={address.postalCode} onChange={(e) => setAddress({ ...address, postalCode: e.target.value })} />
           </div>
+          <h3 className="font-semibold mb-2 mt-2 flex items-center gap-1"><Truck size={16} /> Shipping method</h3>
+          <select className="w-full border border-gray-200 rounded px-3 py-2"
+            value={shipMethod} onChange={(e) => setShipMethod(e.target.value)}>
+            {methods.map((m) => (
+              <option key={m.code} value={m.code}>
+                {m.label} — {m.cents ? price(m.cents, currency) : 'Free'}
+              </option>
+            ))}
+          </select>
         </div>
 
         <div className="card">
@@ -88,13 +113,13 @@ export default function Checkout({ onNavigate }) {
           <div className="border-t border-gray-200 pt-3 text-sm">
             <div className="flex justify-between mb-1"><span className="text-gray-600">Subtotal</span><span>{price(cart.subtotal, currency)}</span></div>
             <div className="flex justify-between mb-1"><span className="text-gray-600">Tax</span><span>{price(cart.tax, currency)}</span></div>
-            <div className="flex justify-between mb-2"><span className="text-gray-600">Shipping</span><span>{price(cart.shipping, currency)}</span></div>
-            <div className="flex justify-between font-bold text-randstad-blue"><span>Total</span><span>{price(cart.total, currency)}</span></div>
+            <div className="flex justify-between mb-2"><span className="text-gray-600">Shipping</span><span>{shippingCents ? price(shippingCents, currency) : 'Free'}</span></div>
+            <div className="flex justify-between font-bold text-randstad-blue"><span>Total</span><span>{price(totalCents, currency)}</span></div>
           </div>
 
           {error && <div className="pill pill-amber mt-3 block">{error}</div>}
           <button className="btn btn-primary w-full mt-4" disabled={busy}>
-            {busy ? 'Processing…' : `Pay ${price(cart.total, currency)}`}
+            {busy ? 'Processing…' : `Pay ${price(totalCents, currency)}`}
           </button>
         </div>
       </form>

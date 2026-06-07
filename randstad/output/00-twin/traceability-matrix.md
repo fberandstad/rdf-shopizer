@@ -232,6 +232,7 @@ ADR-0001..ADR-0013 recorded in `target-architecture.md §6` (agentic paradigm, e
 | Rule / capability | Generated file(s) (`04-forward/converted/`) | Golden master | Unit |
 |-------------------|----------------------------------------------|---------------|------|
 | RULE-0008 customer context required | `server/orders.js#assertCustomer/createOrder` | TEST-0009 | TEST-W3-01 |
+| FS-0003 shipping-method selection (cost in totals) | `server/cart.js#shippingOptions/shippingCostFor`, `server/orders.js#createOrder`, `routes/checkout.js#GET /shipping` | TEST-0010 | TEST-W3-09 |
 | RULE-0009 payment per mode (auth/capture) | `server/orders.js#payOrder`, `payments/mock.js` | TEST-0012 | TEST-W3-03 |
 | RULE-0010/0011 provider abstraction | `server/payments/index.js` (adapter registry) | TEST-0013 | (adapter) |
 | RULE-0012 order persisted only on success | `server/orders.js#payOrder/rollbackOrder` | TEST-0014 | TEST-W3-04 |
@@ -245,7 +246,7 @@ ADR-0001..ADR-0013 recorded in `target-architecture.md §6` (agentic paradigm, e
 | Checkout/Orders UI | `client/pages/Checkout.jsx`, `Orders.jsx`, `Cart.jsx`, `Sidebar.jsx` | TEST-0011/0015 | (E2E) |
 | E2E coverage | `tests/e2e/checkout.e2e.spec.ts` | TEST-0009..0014 | — |
 
-**Orphan check (W3):** order rules live once in `orders.js`/`payments/`, shared by REST (human-present) + agent tool (`payOrder` guarded via ClawBands HITL). No PAN ever enters the system (token-only, Luhn-reject); PSP key used only inside Aquaman; payment ids masked. Payment failure rolls back so no completed order persists (RULE-0012). Unit suite `npm test` → 24/24; DB/UI flows in the W3 E2E spec. No orphan rows; legacy source read-only.
+**Orphan check (W3):** order rules live once in `orders.js`/`payments/`, shared by REST (human-present) + agent tool (`payOrder` guarded via ClawBands HITL). No PAN ever enters the system (token-only, Luhn-reject); PSP key used only inside Aquaman; payment ids masked. Payment failure rolls back so no completed order persists (RULE-0012). Shipping methods are server-authoritative (STANDARD free / EXPRESS surcharge); the chosen method's cost is added to order totals (TEST-0010, RULE-0007) — full geo-zone tax/shipping (RULE-0019) remains deferred and flagged. Unit suite `npm test` → 25/25 (W3); DB/UI flows in the W3 E2E spec. No orphan rows; legacy source read-only.
 
 ---
 
@@ -332,5 +333,7 @@ ADR-0001..ADR-0013 recorded in `target-architecture.md §6` (agentic paradigm, e
 | DPIA / RoPA / retention policy | `docs/compliance/{DPIA,RoPA,retention-policy}.md` | DPR-0015/0017/0018 | (doc) |
 | CI/CD gates (secret scan, SCA, tests, build) | `.github/workflows/ci.yml` | RISK-0002/0019 | (pipeline) |
 | Client GDPR controls (export/delete/withdraw) | `client/pages/Account.jsx` | DPR-0005/0006/0008 | E2E |
+| IaC: hardened image (non-root, healthcheck) + compose | `Dockerfile`, `.dockerignore`, `docker-compose.yml` | RISK-0010, DEBT-0019 | `docker compose config` OK |
+| IaC: Kubernetes (Deployment/HPA/StatefulSet/Ingress-TLS) | `infra/k8s/*.yaml`, `infra/README.md` | DPR-0001/0002/0004, DEBT-0019 | YAML validated 8/8 |
 
 **Orphan check (W7):** security headers (CSP/HSTS/nosniff/frame-deny) applied globally; X-Powered-By stripped (RISK-0010/0011, DPR-0001). GDPR rights implemented end-to-end: export (DPR-0005), erasure cascading to relational rows + agent logs + **pgvector memory** with order anonymization for legal retention (DPR-0006/0011), consent withdrawal (DPR-0008). AI transparency endpoint + human escalation (DPR-0012/0013). DPIA/RoPA/retention docs recorded (DPR-0015/0017/0018). CI/CD pipeline gates secret-scan + SCA + unit + golden-master E2E; **deploy is gated/manual (HITL), never auto-run.** Unit suite `npm test` → 46/46; full Playwright suite → 38/38. **Golden-master TEST-0001..0028 all green.** No orphan rows; legacy source read-only.

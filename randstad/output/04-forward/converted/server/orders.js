@@ -67,11 +67,19 @@ function notifyOrderConfirmed(order) {
 }
 
 // Create an order in AWAITING_PAYMENT from the current cart. Cart is not cleared until paid.
-async function createOrder(owner, { customer, shipAddress = {} }) {
+// A shipping method (TEST-0010) is selectable; its server-authoritative cost is added to the
+// total (RULE-0007). Defaults to the configured default method when none is supplied.
+async function createOrder(owner, { customer, shipAddress = {}, shippingMethod }) {
   if (!owner.userId) throw validationError('login required to checkout');
   const cust = assertCustomer(customer);
   const cart = await cartService.getCart(owner);
   if (!cart.items.length) throw validationError('cart is empty');
+
+  // Recompute totals with the chosen shipping method (overrides the cart's default rate).
+  const ship = cartService.shippingCostFor(shippingMethod);
+  const shipping_cents = ship.cents;
+  const total_cents = cart.subtotal + cart.tax + shipping_cents;
+  const shipMeta = { ...shipAddress, shippingMethod: ship.code };
 
   const client = await pool.connect();
   try {
@@ -80,8 +88,8 @@ async function createOrder(owner, { customer, shipAddress = {} }) {
       `INSERT INTO orders (user_id, status, subtotal_cents, tax_cents, shipping_cents,
                            total_cents, currency, customer_email, customer_name, ship_address)
        VALUES ($1,'AWAITING_PAYMENT',$2,$3,$4,$5,$6,$7,$8,$9) RETURNING *`,
-      [owner.userId, cart.subtotal, cart.tax, cart.shipping, cart.total, cart.currency,
-       cust.email, cust.name, shipAddress]);
+      [owner.userId, cart.subtotal, cart.tax, shipping_cents, total_cents, cart.currency,
+       cust.email, cust.name, shipMeta]);
     const order = rows[0];
     for (const it of cart.items) {
       await client.query(

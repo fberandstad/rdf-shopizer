@@ -9,7 +9,6 @@ const cart = require('./../../cart');
 const orders = require('./../../orders');
 const content = require('./../../content');
 const admin = require('./../../admin');
-const config = require('./../../config');
 
 const tools = [
   {
@@ -86,10 +85,10 @@ const tools = [
   },
   {
     name: 'calculateShipping',
-    description: 'Estimate shipping for the current cart/order (flat rate; geo-zone tax/shipping refined later).',
+    description: 'List the available shipping methods and their server-authoritative costs (TEST-0010).',
     sensitivity: 'read',
     parameters: z.object({}),
-    handler: async () => ({ shipping_cents: config.cart.flatShippingCents, currency: 'EUR' }),
+    handler: async () => ({ options: cart.shippingOptions(), currency: 'EUR' }),
   },
   {
     name: 'createOrder',
@@ -99,9 +98,10 @@ const tools = [
     parameters: z.object({
       customer: z.object({ name: z.string(), email: z.string().email() }),
       shipAddress: z.record(z.any()).optional(),
+      shippingMethod: z.string().optional(),
     }),
-    handler: async ({ customer, shipAddress = {} }, ctx) =>
-      orders.createOrder(cart.ownerFromCtx(ctx), { customer, shipAddress }),
+    handler: async ({ customer, shipAddress = {}, shippingMethod }, ctx) =>
+      orders.createOrder(cart.ownerFromCtx(ctx), { customer, shipAddress, shippingMethod }),
   },
   {
     name: 'payOrder',

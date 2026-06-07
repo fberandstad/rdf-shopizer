@@ -141,4 +141,22 @@ function ownerFromCtx(ctx = {}) {
   return { userId, sessionKey: ctx.sessionKey || (userId ? null : String(ctx.actor || 'anonymous')) };
 }
 
-module.exports = { computeTotals, optionsKey, resolveCart, getCart, addItem, updateItem, ownerFromCtx };
+// --- Shipping methods (FS-0003, TEST-0010) — server-authoritative, selectable at checkout.
+function shippingOptions() {
+  return Object.entries(config.cart.shippingMethods).map(([code, m]) => ({
+    code, label: m.label, cents: m.cents,
+  }));
+}
+
+// Resolve the cost (minor units) for a chosen method code; rejects unknown codes (RULE-0007).
+function shippingCostFor(method) {
+  const code = String(method || config.cart.defaultShippingMethod).toUpperCase();
+  const m = config.cart.shippingMethods[code];
+  if (!m) throw validationError(`unknown shipping method: ${code}`);
+  return { code, cents: m.cents };
+}
+
+module.exports = {
+  computeTotals, optionsKey, resolveCart, getCart, addItem, updateItem, ownerFromCtx,
+  shippingOptions, shippingCostFor,
+};

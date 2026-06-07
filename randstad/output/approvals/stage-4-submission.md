@@ -33,10 +33,12 @@ Digital Twin and forward-engineered into **ShopiClaw**, an agentic Node + React 
 
 ## Verification (reproducible)
 
-- **Unit + golden-master (offline):** `cd converted/server && npm test` → **46/46 pass**.
-- **End-to-end (Playwright):** `cd converted/tests/e2e && npx playwright test` → **38/38 pass**
-  (server started with `MCP_CLIENT_TOKENS='{"partner":"interop-test-token"}'`).
-- **Golden-master TEST-0001..0028: all green** on the target.
+- **Unit + golden-master (offline):** `cd converted/server && npm test` → **47/47 pass**.
+- **End-to-end (Playwright):** `cd converted/tests/e2e && npx playwright test` → **39/39 pass**
+  (server started with `MCP_CLIENT_TOKENS='{"partner":"interop-test-token"}'`; run `node seed.js`
+  first to reset stock).
+- **Golden-master TEST-0001..0028: all green** on the target (TEST-0010 shipping-method
+  selection now fully implemented in W3, not just estimated).
 - Client builds clean (`converted/client && npm run build`).
 - Traceability matrix: Stage-4 sections W0..W7, **no orphan rows**; NFR checklist consolidated.
 
@@ -48,7 +50,7 @@ Digital Twin and forward-engineered into **ShopiClaw**, an agentic Node + React 
 - **Retention jobs (DPR-0011):** implemented. ✅
 - **DPIA/RoPA (DPR-0015/0018):** documented in `converted/docs/compliance/`. ✅
 - **OpenAI DPA / EU region (DPR-0017):** documented; ⚠ ops action (contractual/config).
-- **Golden-master E2E on target:** executed, 38/38. ✅
+- **Golden-master E2E on target:** executed, 39/39. ✅
 - **Inferred rules RULE-0004/0019/0021, legacy JAR versions V1-V3:** ⚠ still flagged unknown (no fabrication).
 
 ## Production-affecting actions requiring EXPLICIT per-action approval (NOT done)

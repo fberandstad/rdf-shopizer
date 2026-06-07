@@ -1,0 +1,68 @@
+# PostgreSQL 16 + pgvector. For production prefer a managed Postgres with pgvector
+# (e.g. RDS/Cloud SQL) + encryption at rest (DPR-0002); this StatefulSet is a portable default.
+apiVersion: v1
+kind: Service
+metadata:
+  name: postgres
+  namespace: shopiclaw
+  labels: { app: postgres }
+spec:
+  clusterIP: None
+  selector: { app: postgres }
+  ports:
+    - name: pg
+      port: 5432
+      targetPort: 5432
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: postgres
+  namespace: shopiclaw
+spec:
+  serviceName: postgres
+  replicas: 1
+  selector:
+    matchLabels: { app: postgres }
+  template:
+    metadata:
+      labels: { app: postgres }
+    spec:
+      securityContext:
+        fsGroup: 999
+      containers:
+        - name: postgres
+          image: pgvector/pgvector:pg16
+          ports:
+            - containerPort: 5432
+          env:
+            - name: POSTGRES_DB
+              valueFrom: { configMapKeyRef: { name: shopiclaw-config, key: PG_DATABASE } }
+            - name: POSTGRES_USER
+              valueFrom: { configMapKeyRef: { name: shopiclaw-config, key: PG_USER } }
+            - name: POSTGRES_PASSWORD
+              valueFrom: { secretKeyRef: { name: shopiclaw-secrets, key: PG_PASSWORD } }
+            - name: PGDATA
+              value: /var/lib/postgresql/data/pgdata
+          volumeMounts:
+            - name: pg-data
+              mountPath: /var/lib/postgresql/data
+          readinessProbe:
+            exec: { command: ["pg_isready", "-U", "shopiclaw"] }
+            initialDelaySeconds: 10
+            periodSeconds: 5
+          livenessProbe:
+            exec: { command: ["pg_isready", "-U", "shopiclaw"] }
+            initialDelaySeconds: 30
+            periodSeconds: 15
+          resources:
+            requests: { cpu: "100m", memory: "256Mi" }
+            limits: { cpu: "1", memory: "1Gi" }
+  volumeClaimTemplates:
+    - metadata:
+        name: pg-data
+      spec:
+        accessModes: ["ReadWriteOnce"]
+        resources:
+          requests:
+            storage: 10Gi

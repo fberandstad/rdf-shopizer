@@ -59,8 +59,9 @@ and exercised by the Playwright golden master (TEST-0005..0008) against a seeded
 | Payment id masked (RULE-0014) | TEST-W3-06 | TEST-0015 | unit | green |
 | payOrder guarded+off-MCP; createOrder write | TEST-W3-07 | RISK-0015/0022 | unit | green |
 | payOrder schema validation | TEST-W3-08 | FS-0004 | unit | green |
+| Shipping method selection adds cost (RULE-0007) | TEST-W3-09 | TEST-0010 | unit | green |
 
-**Total unit suite: 24 passing** (`npm test`). DB-backed flows (order state machine,
+**Total unit suite: 25 passing** (`npm test`). DB-backed flows (order state machine,
 rollback-on-failure, stock decrement, cart clear, owner-scoped reads) are covered by the
 W3 E2E spec (`tests/e2e/checkout.e2e.spec.ts`, TEST-0009..0014) against the live stack.
 
@@ -81,6 +82,7 @@ chromium && npx playwright test`).
 | TEST-0007 | Same SKU merges to one line (RULE-0005) | **pass** |
 | TEST-0008 | Update/remove recomputes totals (RULE-0007) | **pass** |
 | TEST-0009 | createOrder requires customer context (RULE-0008) | **pass** |
+| TEST-0010 | Shipping-method selection adds server-side cost to order totals (FS-0003) | **pass** |
 | TEST-0011/12 | Tokenized payment places order → PAID, cart cleared | **pass** |
 | TEST-0014 | Declined payment persists NO order (RULE-0012, rollback→404) | **pass** |
 | TEST-PCI | Raw card number rejected 422 (RISK-0001) | **pass** |
@@ -114,10 +116,12 @@ chromium && npx playwright test`).
 | DPR-0008 | Marketing consent withdrawal | **pass** |
 | DPR-0011 | Admin retention purge | **pass** |
 
-**E2E result: 38/38 passing** (catalog 4 + cart 4 + checkout 5 + account 8 + admin 5 + interop/MCP/heartbeat 6 + compliance 6).
+**E2E result: 39/39 passing** (catalog 4 + cart 4 + checkout 6 + account 8 + admin 5 + interop/MCP/heartbeat 6 + compliance 6).
+Checkout now includes TEST-0010 (shipping-method selection adds server-authoritative cost to totals).
 Integration smoke (liveness, readiness, login, auth/me, catalog, cart merge) also green via curl.
 Note: MCP/interop data endpoints need a client token — start the server with
-`MCP_CLIENT_TOKENS='{"partner":"interop-test-token"}'` for the interop E2E spec.
+`MCP_CLIENT_TOKENS='{"partner":"interop-test-token"}'` for the interop E2E spec, and run
+`node seed.js` first (seed now resets stock on re-run) for deterministic checkout tests.
 
 ## Wave 7 — Hardening & Compliance (RISK-0010/0011/0020, DPR-0005/0006/0008/0011/0012)
 

@@ -4,7 +4,7 @@
 // path for payOrder is guarded and requires explicit HITL approval.
 const express = require('express');
 const orders = require('./../orders');
-const config = require('./../config');
+const cartService = require('./../cart');
 const { audit } = require('./../agent/clawbands');
 
 const router = express.Router();
@@ -24,13 +24,14 @@ function mapError(res, e) {
   }
 }
 
-router.post('/shipping', (req, res) => {
-  res.json({ shipping_cents: config.cart.flatShippingCents, currency: 'EUR' });
+// Available shipping methods (TEST-0010). GET lists options; the client selects one for /order.
+router.get('/shipping', (req, res) => {
+  res.json({ options: cartService.shippingOptions(), currency: 'EUR' });
 });
 
 router.post('/order', async (req, res) => {
-  const { customer, shipAddress = {} } = req.body || {};
-  try { res.status(201).json(await orders.createOrder(owner(req), { customer, shipAddress })); }
+  const { customer, shipAddress = {}, shippingMethod } = req.body || {};
+  try { res.status(201).json(await orders.createOrder(owner(req), { customer, shipAddress, shippingMethod })); }
   catch (e) { mapError(res, e); }
 });
 

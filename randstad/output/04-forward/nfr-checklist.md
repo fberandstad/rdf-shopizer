@@ -51,6 +51,6 @@
 
 ## Quality
 
-- [x] Golden-master E2E (TEST-0001..0028) green on target — 38/38 Playwright
-- [x] Unit + integration coverage gate — 46/46 unit (`npm test`)
+- [x] Golden-master E2E (TEST-0001..0028) green on target — 39/39 Playwright
+- [x] Unit + integration coverage gate — 47/47 unit (`npm test`)
 - [x] Lint/format CI; conventional commits; PR review — `.github/workflows/ci.yml` (gated, no auto-deploy)

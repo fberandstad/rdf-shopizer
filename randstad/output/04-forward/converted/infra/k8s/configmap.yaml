@@ -1,0 +1,29 @@
+# Non-secret runtime configuration. Secrets live in the Secret (secret.example.yaml).
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: shopiclaw-config
+  namespace: shopiclaw
+data:
+  NODE_ENV: "production"
+  PORT: "4000"
+  PG_HOST: "postgres"
+  PG_PORT: "5432"
+  PG_DATABASE: "shopiclaw"
+  PG_USER: "shopiclaw"
+  OPENAI_MODEL: "gpt-4o"
+  OPENAI_EMBEDDING_MODEL: "text-embedding-3-large"
+  AGENT_MAX_TOOL_ITERATIONS: "12"
+  COPILOTKIT_TELEMETRY_DISABLED: "true"
+  DO_NOT_TRACK: "1"
+  MCP_ENABLED: "true"
+  INTEROP_ENABLED: "true"
+  PSP_PROVIDER: "mock"
+  HEARTBEAT_ENABLED: "true"
+  HEARTBEAT_CRON: "*/30 * * * *"
+  LOW_STOCK_THRESHOLD: "5"
+  ABANDONED_CART_HOURS: "24"
+  RETENTION_AGENT_MESSAGE_DAYS: "90"
+  RETENTION_TOOL_AUDIT_DAYS: "365"
+  RETENTION_NOTIFICATION_DAYS: "180"
+  CLAWBANDS_GUARDED_TOOLS: "payOrder,requestRefund,manageCatalog,manageInventory"
