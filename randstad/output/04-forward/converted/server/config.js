@@ -60,7 +60,10 @@ module.exports = {
   },
   rag: {
     // Root of the Digital Twin corpus (00-twin / 02-reverse / 03-target).
-    twinRoot: process.env.TWIN_ROOT || require('path').resolve(__dirname, '..', '..', '..', '..'),
+    // config.js lives in .../randstad/output/04-forward/converted/server, so three
+    // parents up (server → converted → 04-forward → output) is randstad/output,
+    // where the twin folders live.
+    twinRoot: process.env.TWIN_ROOT || require('path').resolve(__dirname, '..', '..', '..'),
   },
   cart: {
     // Server-authoritative pricing inputs (RULE-0007). Tax in basis points (e.g. 2000 = 20%).

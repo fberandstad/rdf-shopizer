@@ -2,28 +2,54 @@
 @tailwind components;
 @tailwind utilities;
 
-@import '@copilotkit/react-ui/styles.css';
+/* Note: CopilotKit's stylesheet is imported as a JS module in main.jsx
+   (matching the example) — a CSS @import here is dropped because it would
+   follow the @tailwind directives. */
 
-:root { --randstad-blue: #0053A5; --randstad-lblue: #0084FF; }
+/* Compact base scale — mirrors the Delivery Cockpit example look & feel. */
+html { font-size: 13px; }
 
-html, body, #root { height: 100%; }
-body { font-family: ui-sans-serif, system-ui, Arial, sans-serif; }
+:root {
+  --randstad-blue: #0053A5;
+  --randstad-lblue: #0084FF;
+  --randstad-cyan: #00D7FF;
+  --randstad-dark: #001E50;
+  --randstad-gray1: #6B7DA0;
+  --randstad-gray2: #7D8599;
+  --randstad-gray3: #BCC2D0;
+}
 
 /* Dark mode */
 .dark body { background:#0f172a; color:#f1f5f9; }
-.dark .bg-white { background:#1e293b !important; }
+.dark .bg-white  { background:#1e293b !important; }
 .dark .bg-gray-50 { background:#0f172a !important; }
+.dark .bg-gray-100 { background:#1e293b !important; }
 .dark .text-gray-900 { color:#f1f5f9 !important; }
 .dark .text-gray-600 { color:#94a3b8 !important; }
 .dark .text-gray-500 { color:#64748b !important; }
 .dark .border-gray-200 { border-color:#334155 !important; }
+.dark .divide-gray-200 > * + * { border-color:#334155 !important; }
+.dark .hover\:bg-gray-50:hover { background:#1e293b !important; }
+.dark .hover\:bg-gray-100:hover { background:#334155 !important; }
 .dark input, .dark select { background:#334155 !important; color:#f1f5f9 !important; border-color:#475569 !important; }
+.dark .shadow { box-shadow: 0 1px 3px rgba(0,0,0,.5); }
 
 /* Sidebar */
 #sidebar { transition: width .25s ease; }
-#sidebar.collapsed { width:4rem; }
+#sidebar.collapsed { width:4rem !important; min-width:4rem !important; }
 #sidebar.collapsed .nav-label { display:none; }
 #sidebar.collapsed .nav-logo-text { display:none; }
+
+/* Tables */
+table { border-collapse: collapse; width: 100%; }
+th, td { padding: .5rem .75rem; text-align: left; }
+thead th { font-size:.75rem; font-weight:600; text-transform:uppercase; letter-spacing:.05em; color:#6b7280; background:#f9fafb; }
+.dark thead th { background:#1e293b; color:#94a3b8; }
+tbody tr { border-top:1px solid #e5e7eb; }
+.dark tbody tr { border-color:#334155; }
+tbody tr:hover { background:#f9fafb; }
+.dark tbody tr:hover { background:#1e293b; }
+.cursor-pointer { cursor:pointer; }
 
 /* Cards */
 .card { background:#fff; border-radius:.5rem; box-shadow:0 1px 3px rgba(0,0,0,.1); padding:1.5rem; }
@@ -35,15 +61,11 @@ body { font-family: ui-sans-serif, system-ui, Arial, sans-serif; }
 .kpi-label { font-size:.875rem; color:#6b7280; margin-bottom:.5rem; }
 .kpi-sub { font-size:.75rem; color:#6b7280; margin-top:.25rem; }
 
-/* Tables */
-table { border-collapse: collapse; width: 100%; }
-th, td { padding: .5rem .75rem; text-align: left; }
-thead th { font-size:.75rem; font-weight:600; text-transform:uppercase; letter-spacing:.05em; color:#6b7280; background:#f9fafb; }
-.dark thead th { background:#1e293b; color:#94a3b8; }
-tbody tr { border-top:1px solid #e5e7eb; }
-.dark tbody tr { border-color:#334155; }
-tbody tr:hover { background:#f9fafb; }
-.dark tbody tr:hover { background:#1e293b; }
+/* Tabs */
+.tab-btn { padding:.5rem 1rem; font-size:.875rem; font-weight:500; border-bottom:2px solid transparent; color:#6b7280; cursor:pointer; white-space:nowrap; background:none; border-top:none; border-left:none; border-right:none; }
+.tab-btn.active { border-bottom-color:#0053A5; color:#0053A5; }
+.dark .tab-btn { color:#94a3b8; }
+.dark .tab-btn.active { border-bottom-color:#0084FF; color:#0084FF; }
 
 /* Pills / badges */
 .pill { display:inline-block; padding:2px 10px; border-radius:9999px; font-size:.75rem; font-weight:500; margin:2px; }
@@ -51,12 +73,14 @@ tbody tr:hover { background:#f9fafb; }
 .pill-gray { background:#f3f4f6; color:#374151; }
 .pill-green { background:#dcfce7; color:#166534; }
 .pill-amber { background:#fef3c7; color:#b45309; }
+.pill-purple { background:#ede9fe; color:#6d28d9; }
 
 /* Buttons */
-.btn { padding:.5rem 1rem; border-radius:.5rem; font-weight:600; font-size:.875rem; cursor:pointer; }
+.btn { padding:.5rem 1rem; border-radius:.5rem; font-weight:600; font-size:.875rem; cursor:pointer; transition:background .15s; }
 .btn-primary { background:#0053A5; color:#fff; }
 .btn-primary:hover { background:#004080; }
 .btn-ghost { background:transparent; color:#0053A5; }
+.btn-ghost:hover { background:rgba(0,83,165,.08); }
 
 /* Spinner */
 .spinner { border:3px solid #e5e7eb; border-top-color:#0053A5; border-radius:50%; width:2.5rem; height:2.5rem; animation:spin .8s linear infinite; }
@@ -66,6 +90,21 @@ tbody tr:hover { background:#f9fafb; }
 .product-card { background:#fff; border-radius:.5rem; box-shadow:0 1px 3px rgba(0,0,0,.1); overflow:hidden; transition:box-shadow .2s; }
 .product-card:hover { box-shadow:0 4px 12px rgba(0,0,0,.15); }
 .dark .product-card { background:#1e293b; }
+
+/* Modal */
+.modal-overlay { position:fixed; inset:0; background:rgba(0,0,0,.5); z-index:50; display:flex; align-items:center; justify-content:center; padding:1rem; }
+.modal-content { background:#fff; border-radius:.75rem; max-width:56rem; width:100%; max-height:90vh; overflow-y:auto; }
+.dark .modal-content { background:#1e293b; }
+
+/* Sort headers */
+.sort-header { cursor:pointer; user-select:none; transition: color .15s; }
+.sort-header:hover { color:#0053A5; }
+.sort-header.active { color:#0053A5; }
+.dark .sort-header.active { color:#0084FF; }
+
+/* CopilotChat sizing */
+.copilotKitChat { height: 100% !important; max-height: 100% !important; display: flex; flex-direction: column; }
+.copilotKitChat .copilotKitMessages { flex: 1; min-height: 0; overflow-y: auto !important; }
 
 /* Scrollbar */
 ::-webkit-scrollbar { width:6px; height:6px; }

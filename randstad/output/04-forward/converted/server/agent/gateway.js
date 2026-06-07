@@ -1,6 +1,11 @@
 // Agent Gateway — wires the ShopiClaw agent to CopilotKit using the OpenAI adapter (ADR-0003).
-// Read/safe tools are registered as CopilotKit actions; every call runs through ClawBands
-// (audit + guarded-tool approval). Guarded tools surface an APPROVAL_REQUIRED signal.
+//
+// Tool execution is NOT registered here. CopilotKit's OpenAIAdapter advertises tools to
+// the LLM but does not run backend `CopilotRuntime` action handlers — it emits each tool
+// call to the client for execution. So the React client registers the agent's tools as
+// frontend actions (see client `useShopiClawActions`) that proxy to `POST /api/agent/tool`,
+// where the real handlers run through ClawBands (audit + guarded-tool HITL approval).
+// This gateway only provides the LLM connection (runtime + OpenAI adapter + HTTP endpoint).
 
 // Disable CopilotKit telemetry BEFORE the runtime loads: this version's telemetry client
 // throws (`lambdaClient.send is not a function`) on an async tick and would crash the
@@ -14,66 +19,25 @@ const {
   copilotRuntimeNodeHttpEndpoint,
 } = require('@copilotkit/runtime');
 const OpenAI = require('openai');
-const { z } = require('zod');
 const config = require('./../config');
-const { tools } = require('./tools');
-const { enforce } = require('./clawbands');
-
-// Map a Zod object schema to CopilotKit action parameters (best-effort, primitives).
-function zodToParams(schema) {
-  const shape = schema?._def?.shape ? schema._def.shape() : {};
-  return Object.entries(shape).map(([name, def]) => {
-    const typeName = def?._def?.typeName || '';
-    const type = typeName === 'ZodNumber' ? 'number'
-      : typeName === 'ZodBoolean' ? 'boolean' : 'string';
-    return {
-      name,
-      type,
-      description: name,
-      required: !def.isOptional?.(),
-    };
-  });
-}
-
-function buildActions(getCtx) {
-  return tools.map(tool => ({
-    name: tool.name,
-    description: tool.description,
-    parameters: zodToParams(tool.parameters),
-    handler: async (args) => {
-      const ctx = getCtx();
-      const parsed = tool.parameters.parse(args || {});
-      try {
-        return await enforce(ctx, tool, parsed, tool.handler);
-      } catch (e) {
-        if (e.code === 'APPROVAL_REQUIRED') {
-          return { status: 'approval_required', approvalId: e.approvalId,
-            message: `This action needs human approval (id ${e.approvalId}).` };
-        }
-        return { status: 'error', message: e.message };
-      }
-    },
-  }));
-}
 
 function createCopilotHandler() {
   const openai = config.openai.apiKey ? new OpenAI({ apiKey: config.openai.apiKey }) : new OpenAI({ apiKey: 'sk-missing' });
   const serviceAdapter = new OpenAIAdapter({ openai, model: config.openai.model });
 
   return (req, res, next) => {
-    // Per-request context (actor/role/channel) for ClawBands + role-scoped tools.
-    const ctx = {
-      actor: req.user ? String(req.user.id) : 'anonymous',
-      role: req.user?.role || 'customer',
-      channel: 'webchat',
-      sessionKey: req.sessionID || null,
-    };
-    const runtime = new CopilotRuntime({ actions: buildActions(() => ctx) });
+    const runtime = new CopilotRuntime();
     const handler = copilotRuntimeNodeHttpEndpoint({
       endpoint: '/api/copilotkit',
       runtime,
       serviceAdapter,
     });
+    // This is mounted via app.use('/api/copilotkit', …), which strips the mount
+    // prefix from req.url (leaving '/'). The CopilotKit/yoga handler matches the
+    // request path against the configured `endpoint`, so it must see the FULL path
+    // — otherwise both the GET runtime-info handshake and the POST chat call 404
+    // and the chat input never enables. Restore the original URL before delegating.
+    req.url = req.originalUrl;
     return handler(req, res, next);
   };
 }

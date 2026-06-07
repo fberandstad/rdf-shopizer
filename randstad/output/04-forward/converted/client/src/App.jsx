@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { CopilotKit } from '@copilotkit/react-core';
 import { CopilotSidebar } from '@copilotkit/react-ui';
 import { COPILOT_RUNTIME_URL, api } from './config';
+import useShopiClawActions from './agent/useShopiClawActions';
 import Sidebar from './components/Sidebar';
 import UserMenu from './components/UserMenu';
 import { CartProvider, useCart } from './cart/CartContext';
@@ -19,6 +20,10 @@ function AppContent({ authUser, onLogout, aiEnabled }) {
   const [currentPage, setCurrentPage] = useState('storefront');
   const [darkMode, setDarkMode] = useState(false);
   const { count: cartCount } = useCart();
+
+  // Register ShopiClaw's tools as CopilotKit frontend actions (they proxy to the
+  // server, which runs them through ClawBands). Must be inside the CopilotKit provider.
+  useShopiClawActions();
 
   const toggleDark = useCallback(() => {
     setDarkMode((d) => {
@@ -53,11 +58,10 @@ function AppContent({ authUser, onLogout, aiEnabled }) {
         cartCount={cartCount}
       />
       <div className="flex-1 flex flex-col overflow-hidden">
-        <header className="flex items-center justify-between px-6 py-3 border-b bg-white">
-          <h1 className="text-lg font-semibold text-randstad-blue capitalize">{currentPage}</h1>
+        <header className="flex items-center justify-end px-6 py-3 border-b bg-white dark:bg-slate-800 dark:border-slate-700">
           <UserMenu user={authUser} onLogout={onLogout} />
         </header>
-        <main className="flex-1 p-6 overflow-y-auto bg-gray-50">{renderPage()}</main>
+        <main className="flex-1 p-6 overflow-y-auto">{renderPage()}</main>
       </div>
       {aiEnabled && (
         <CopilotSidebar
@@ -88,7 +92,10 @@ export default function App() {
   if (!authChecked) {
     return (
       <div className="flex items-center justify-center min-h-screen">
-        <div className="spinner" />
+        <div className="text-center">
+          <div className="spinner mx-auto mb-4" />
+          <p className="text-gray-500">Loading…</p>
+        </div>
       </div>
     );
   }

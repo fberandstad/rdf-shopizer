@@ -12,9 +12,35 @@ router.post('/search', async (req, res) => {
   if (!question) return res.status(400).json({ error: 'question required' });
   try {
     const { passages, citations } = await byName.twinKnowledgeSearch.handler({ question });
-    let answer = passages.map(p => p.content).join('\n\n').slice(0, 1500);
-    if (client && passages.length) {
-      const context = passages.map(p => `[${p.source}] ${p.content}`).join('\n---\n');
+    // No grounded passages → return an explicit message instead of a blank card.
+    // Most often this means the Digital Twin index is empty (run POST /api/rag/ingest
+    // with scope "twin") or the question has no relevant match in the corpus.
+    if (!passages.length) {
+      return res.json({
+        answer: 'No relevant information found in the Digital Twin for this question. '
+          + 'The knowledge base covers ShopiClaw itself — its architecture, business rules, '
+          + 'ADRs and legacy behavior — not the product catalog. '
+          + 'If you expected an answer, an admin may need to (re)build the index.',
+        citations: [],
+      });
+    }
+    const citationList = citations.map(source => ({ source }));
+
+    // The LLM MUST be polled with the retrieved Digital Twin passages to synthesize a
+    // grounded answer. Without an OpenAI client we cannot synthesize — say so explicitly
+    // rather than dumping raw passages that masquerade as an answer.
+    if (!client) {
+      return res.json({
+        answer: 'AI answer synthesis is unavailable because the assistant is not configured '
+          + '(no OPENAI_API_KEY). The relevant Digital Twin passages are listed under Sources.',
+        citations: citationList,
+        aiSynthesized: false,
+      });
+    }
+
+    const context = passages.map(p => `[${p.source}] ${p.content}`).join('\n---\n');
+    let answer;
+    try {
       const completion = await client.chat.completions.create({
         model: config.openai.model,
         messages: [
@@ -23,9 +49,23 @@ router.post('/search', async (req, res) => {
           { role: 'user', content: `Question: ${question}\n\nContext:\n${context}` },
         ],
       });
-      answer = completion.choices[0].message.content;
+      answer = completion.choices?.[0]?.message?.content?.trim();
+    } catch (e) {
+      console.error('[knowledge] LLM completion failed:', e.message);
+      return res.status(502).json({
+        error: `AI synthesis failed: ${e.message}`,
+        citations: citationList,
+        aiSynthesized: false,
+      });
     }
-    res.json({ answer, citations: citations.map(source => ({ source })) });
+    if (!answer) {
+      return res.status(502).json({
+        error: 'The assistant returned an empty answer. Please try rephrasing your question.',
+        citations: citationList,
+        aiSynthesized: false,
+      });
+    }
+    res.json({ answer, citations: citationList, aiSynthesized: true });
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
