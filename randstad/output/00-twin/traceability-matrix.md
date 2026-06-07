@@ -246,3 +246,26 @@ ADR-0001..ADR-0013 recorded in `target-architecture.md §6` (agentic paradigm, e
 | E2E coverage | `tests/e2e/checkout.e2e.spec.ts` | TEST-0009..0014 | — |
 
 **Orphan check (W3):** order rules live once in `orders.js`/`payments/`, shared by REST (human-present) + agent tool (`payOrder` guarded via ClawBands HITL). No PAN ever enters the system (token-only, Luhn-reject); PSP key used only inside Aquaman; payment ids masked. Payment failure rolls back so no completed order persists (RULE-0012). Unit suite `npm test` → 24/24; DB/UI flows in the W3 E2E spec. No orphan rows; legacy source read-only.
+
+---
+
+# Stage 4 extension — Wave 4 (Orders & Account) — 2026-06-07
+
+## FS-0005/0006/0007/0009 / RULE-0013/0014/0015/0020 → generated code → test
+
+| Rule / capability | Generated file(s) (`04-forward/converted/`) | Golden master | Unit |
+|-------------------|----------------------------------------------|---------------|------|
+| FS-0006 registration | `server/account.js#register/assertRegistration`, `auth.js` `/register` | TEST-0018 | TEST-W4-01 |
+| FS-0006 profile + addresses | `server/account.js`, `routes/account.js` | TEST-0019 | TEST-W4-02 |
+| FS-0006 product reviews | `server/content.js#submitReview/listReviews`, `routes/catalog.js` | TEST-0020 | TEST-W4-03/07 |
+| FS-0007 newsletter (PII+consent) | `server/content.js#subscribe`, `routes/newsletter.js` | TEST-0022 | (E2E) |
+| FS-0005 invoice summary | `server/content.js#getInvoice`, `routes/orders.js` `/:id/invoice` | TEST-0017 | (E2E) |
+| RULE-0014 masked payment | `server/orders.js#maskPaymentRef` (reused) | TEST-0015 | TEST-W3-06 |
+| RULE-0020 supported cards per store | `server/content.js#supportedCards` | TEST-0017 | TEST-W4-04 |
+| RULE-0013 order owner-scoped | `server/orders.js#getOrder` (non-owner → 404) | TEST-0016 | (E2E) |
+| FS-0009/RULE-0015 gated download | `server/content.js#canDownload/authorizeDownload`, `routes/files.js` | TEST-0021 | TEST-W4-05 |
+| Agent tools (reviews/newsletter) | `tools/index.js` (`listProductReviews` read+MCP; `submitReview`/`subscribeNewsletter` write, off MCP) | — | TEST-W4-06 |
+| Account/Orders UI | `client/pages/Account.jsx`, `Login.jsx` (register), `ProductDetail.jsx` (reviews+download), `Sidebar.jsx` | TEST-0018..0021 | (E2E) |
+| E2E coverage | `tests/e2e/account.e2e.spec.ts` | TEST-0015..0022 | — |
+
+**Orphan check (W4):** account/content logic centralized in `account.js`/`content.js`, shared by REST + agent tools. Owner-scoping enforced (addresses, orders, reviews tied to `user_id`); non-owner order reads return 404 (no info leak, RULE-0013). Digital downloads require admin or a PAID order (RULE-0015). Newsletter stores PII with explicit consent (FS-0007/DPR R9); payment data masked (RULE-0014). Unit suite `npm test` → 31/31; full Playwright suite → 21/21. No orphan rows; legacy source read-only.

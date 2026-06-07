@@ -8,7 +8,7 @@
     "dev": "node index.js",
     "seed": "node seed.js",
     "ingest": "node rag/ingest-cli.js",
-    "test": "node --test ../../tests/w0/agent-core.test.js ../../tests/w1/catalog.test.js ../../tests/w2/cart.test.js ../../tests/w3/checkout.test.js"
+    "test": "node --test ../../tests/w0/agent-core.test.js ../../tests/w1/catalog.test.js ../../tests/w2/cart.test.js ../../tests/w3/checkout.test.js ../../tests/w4/account.test.js"
   },
   "dependencies": {
     "@copilotkit/runtime": "^1.56.5",

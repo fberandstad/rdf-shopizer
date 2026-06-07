@@ -13,6 +13,9 @@ const PRODUCTS = [
   { sku: 'EL-002', name: 'USB-C Charger 65W', price_cents: 2999, category: 'electronics', stock: 3 },
   { sku: 'BK-001', name: 'The Pragmatic Programmer', price_cents: 3499, category: 'books', stock: 40 },
   { sku: 'HM-001', name: 'Ceramic Plant Pot', price_cents: 1499, category: 'home', stock: 12 },
+  // Digital product (FS-0009): download is role/purchase gated (RULE-0015).
+  { sku: 'DL-001', name: 'Clean Code (eBook)', price_cents: 1999, category: 'books', stock: 999,
+    digital: true, download_path: 'assets/clean-code.pdf' },
 ];
 
 async function seed() {
@@ -25,9 +28,10 @@ async function seed() {
   }
   for (const p of PRODUCTS) {
     await pool.query(
-      `INSERT INTO product (sku, name, price_cents, category_id, stock)
-       VALUES ($1,$2,$3,$4,$5) ON CONFLICT (sku) DO NOTHING`,
-      [p.sku, p.name, p.price_cents, catId[p.category], p.stock]);
+      `INSERT INTO product (sku, name, price_cents, category_id, stock, digital, download_path)
+       VALUES ($1,$2,$3,$4,$5,$6,$7)
+       ON CONFLICT (sku) DO UPDATE SET digital=EXCLUDED.digital, download_path=EXCLUDED.download_path`,
+      [p.sku, p.name, p.price_cents, catId[p.category], p.stock, !!p.digital, p.download_path || null]);
   }
   console.log(`[seed] ${CATEGORIES.length} categories, ${PRODUCTS.length} products`);
 }

@@ -86,8 +86,31 @@ chromium && npx playwright test`).
 | TEST-PCI | Raw card number rejected 422 (RISK-0001) | **pass** |
 | TEST-0013 | Order owner-scoped read, payment masked, no token leak | **pass** |
 
-**E2E result: 13/13 passing** (catalog 4 + cart 4 + checkout 5). Integration smoke
-(liveness, readiness, login, auth/me, catalog, cart merge) also green via curl.
+| TEST-0018 | Register customer + authenticate (FS-0006) | **pass** |
+| TEST-0019 | Profile update + address CRUD (owner-scoped) | **pass** |
+| TEST-0019b | Invalid address rejected 422 | **pass** |
+| TEST-0020 | Product review tied to customer; rating bounds | **pass** |
+| TEST-0022 | Newsletter subscribe (PII + consent; no-consent 422) | **pass** |
+| TEST-0015/17 | Invoice masked payment + supported cards (RULE-0020) | **pass** |
+| TEST-0016 | Order access control — non-owner 404 (RULE-0013) | **pass** |
+| TEST-0021 | Digital download gated — no purchase 403, admin 200 (RULE-0015) | **pass** |
+
+**E2E result: 21/21 passing** (catalog 4 + cart 4 + checkout 5 + account/orders 8).
+Integration smoke (liveness, readiness, login, auth/me, catalog, cart merge) also green via curl.
+
+## Wave 4 — Orders & Account (FS-0005/0006/0007/0009, RULE-0013/0014/0015/0020)
+
+| Area | Test | Maps to | Type | Status |
+|------|------|---------|------|--------|
+| Registration validation + email normalize | TEST-W4-01 | TEST-0018 | unit | green |
+| Profile + address validation | TEST-W4-02 | TEST-0019 | unit | green |
+| Review rating bounds (RULE) | TEST-W4-03 | TEST-0020 | unit | green |
+| Supported cards per store (RULE-0020) | TEST-W4-04 | TEST-0017 | unit | green |
+| Download authorization (RULE-0015) | TEST-W4-05 | TEST-0021 | unit | green |
+| Tool sensitivities + MCP policy | TEST-W4-06 | RISK-0022 | unit | green |
+| Review tool schema bounds | TEST-W4-07 | FS-0006 | unit | green |
+
+**Total unit suite: 31 passing** (`npm test`). DB/HTTP flows in `tests/e2e/account.e2e.spec.ts`.
 
 ### Bugs found & fixed during verification
 - **Server crash (P1):** CopilotKit runtime telemetry threw `lambdaClient.send is not a

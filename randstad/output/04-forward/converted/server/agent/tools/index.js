@@ -7,6 +7,7 @@ const { search } = require('./../../rag/retriever');
 const metrics = require('./../../routes/metricsQueries');
 const cart = require('./../../cart');
 const orders = require('./../../orders');
+const content = require('./../../content');
 const config = require('./../../config');
 
 const tools = [
@@ -129,6 +130,31 @@ const tools = [
     handler: async (_args, ctx) => orders.listOrders(cart.ownerFromCtx(ctx)),
   },
   {
+    name: 'listProductReviews',
+    description: 'List reviews (rating, title, body, author) and average rating for a product SKU.',
+    sensitivity: 'read',
+    parameters: z.object({ sku: z.string() }),
+    handler: async ({ sku }) => content.listReviews(sku),
+  },
+  {
+    name: 'submitReview',
+    description: 'Post or update the current user\'s review for a product (rating 1-5). Tied to user+product.',
+    sensitivity: 'write',
+    parameters: z.object({
+      sku: z.string(), rating: z.number().int().min(1).max(5),
+      title: z.string().optional(), body: z.string().optional(),
+    }),
+    handler: async ({ sku, rating, title, body }, ctx) =>
+      content.submitReview(cart.ownerFromCtx(ctx).userId, sku, { rating, title, body }),
+  },
+  {
+    name: 'subscribeNewsletter',
+    description: 'Subscribe an email to the newsletter with explicit consent (PII; FS-0007).',
+    sensitivity: 'write',
+    parameters: z.object({ email: z.string().email(), consent: z.boolean().optional() }),
+    handler: async ({ email, consent }) => content.subscribe(email, consent !== false),
+  },
+  {
     name: 'ragSearch',
     description: 'Semantic search over the product/policy knowledge base.',
     sensitivity: 'read',
@@ -175,6 +201,6 @@ const byName = Object.fromEntries(tools.map(t => [t.name, t]));
 // Tools safe to expose over MCP by default (read-only, no money-path).
 // Owner-scoped order reads stay OFF MCP (they depend on a user session, not an MCP client).
 const MCP_SAFE = ['searchCatalog', 'getProduct', 'listCategories', 'calculateShipping',
-  'ragSearch', 'twinKnowledgeSearch', 'getSystemHealth', 'getBusinessMetrics'];
+  'listProductReviews', 'ragSearch', 'twinKnowledgeSearch', 'getSystemHealth', 'getBusinessMetrics'];
 
 module.exports = { tools, byName, MCP_SAFE };

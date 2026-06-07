@@ -1,10 +1,11 @@
 import { useState } from 'react';
-import { Store, BookOpen, Activity, Moon, Sun, Menu, ShoppingBag, ShoppingCart, Package } from 'lucide-react';
+import { Store, BookOpen, Activity, Moon, Sun, Menu, ShoppingBag, ShoppingCart, Package, User } from 'lucide-react';
 
 const NAV = [
   { id: 'storefront', label: 'Storefront', icon: Store },
   { id: 'cart', label: 'Cart', icon: ShoppingCart },
   { id: 'orders', label: 'Orders', icon: Package },
+  { id: 'account', label: 'Account', icon: User },
   { id: 'knowledge', label: 'Knowledge', icon: BookOpen },
   { id: 'health', label: 'Health & Metrics', icon: Activity, adminOnly: true },
 ];

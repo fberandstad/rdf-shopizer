@@ -22,6 +22,20 @@ function setupAuth(dbPool) {
   });
 
   const authRouter = express.Router();
+  const account = require('./account');
+
+  // Self-service registration (FS-0006, TEST-0018). Creates a customer and logs them in.
+  authRouter.post('/register', async (req, res) => {
+    const { email, password, name } = req.body || {};
+    try {
+      const user = await account.register({ email, password, name });
+      req.session.user = { id: user.id, email: user.email, name: user.name, role: user.role };
+      res.status(201).json({ user: req.session.user });
+    } catch (e) {
+      const status = e.code === 'CONFLICT' ? 409 : e.code === 'VALIDATION' ? 422 : 500;
+      res.status(status).json({ error: e.message });
+    }
+  });
 
   authRouter.post('/login', async (req, res) => {
     const { email, password } = req.body || {};

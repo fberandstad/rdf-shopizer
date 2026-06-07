@@ -136,6 +136,44 @@ const STATEMENTS = [
   `ALTER TABLE orders ADD COLUMN IF NOT EXISTS ship_address JSONB NOT NULL DEFAULT '{}'::jsonb`,
   `ALTER TABLE orders ADD COLUMN IF NOT EXISTS payment_provider TEXT`,
   `ALTER TABLE orders ADD COLUMN IF NOT EXISTS paid_at TIMESTAMPTZ`,
+
+  // --- Account & content (Wave 4: FS-0005/0006/0007/0009, RULE-0013/0014/0015) ---
+  `ALTER TABLE app_user ADD COLUMN IF NOT EXISTS phone TEXT`,
+  // Digital products are role/purchase gated for download (FS-0009, RULE-0015).
+  `ALTER TABLE product ADD COLUMN IF NOT EXISTS digital BOOLEAN NOT NULL DEFAULT false`,
+  `ALTER TABLE product ADD COLUMN IF NOT EXISTS download_path TEXT`,
+
+  `CREATE TABLE IF NOT EXISTS address (
+     id SERIAL PRIMARY KEY,
+     user_id INTEGER NOT NULL REFERENCES app_user(id) ON DELETE CASCADE,
+     label TEXT,
+     line1 TEXT NOT NULL,
+     city TEXT NOT NULL,
+     postal_code TEXT NOT NULL,
+     country TEXT NOT NULL DEFAULT 'FR',
+     is_default BOOLEAN NOT NULL DEFAULT false,
+     created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+   )`,
+
+  // Product reviews (FS-0006): one review per customer per product, tied to both.
+  `CREATE TABLE IF NOT EXISTS product_review (
+     id SERIAL PRIMARY KEY,
+     product_id INTEGER NOT NULL REFERENCES product(id) ON DELETE CASCADE,
+     user_id INTEGER NOT NULL REFERENCES app_user(id) ON DELETE CASCADE,
+     rating INTEGER NOT NULL CHECK (rating BETWEEN 1 AND 5),
+     title TEXT,
+     body TEXT,
+     created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+     UNIQUE (product_id, user_id)
+   )`,
+
+  // Newsletter subscribers (FS-0007): PII (email) + explicit consent flag (DPR/redaction R9).
+  `CREATE TABLE IF NOT EXISTS newsletter_subscriber (
+     id SERIAL PRIMARY KEY,
+     email TEXT UNIQUE NOT NULL,
+     consent BOOLEAN NOT NULL DEFAULT true,
+     created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+   )`,
 ];
 
 async function runMigrations() {

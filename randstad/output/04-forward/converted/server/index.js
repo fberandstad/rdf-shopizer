@@ -23,6 +23,9 @@ const ragRoutes = require('./routes/rag');
 const cartRoutes = require('./routes/cart');
 const checkoutRoutes = require('./routes/checkout');
 const orderRoutes = require('./routes/orders');
+const accountRoutes = require('./routes/account');
+const newsletterRoutes = require('./routes/newsletter');
+const fileRoutes = require('./routes/files');
 
 const app = express();
 
@@ -59,6 +62,9 @@ app.use('/api', apiLimiter, (req, res, next) => {
 
 // --- API routes ---
 app.use('/api/catalog', catalogRoutes);
+app.use('/api/account', accountRoutes);
+app.use('/api/newsletter', newsletterRoutes);
+app.use('/api/files', fileRoutes);
 app.use('/api/cart', cartRoutes);
 app.use('/api/checkout', checkoutRoutes);
 app.use('/api/orders', orderRoutes);
