@@ -95,8 +95,27 @@ chromium && npx playwright test`).
 | TEST-0016 | Order access control — non-owner 404 (RULE-0013) | **pass** |
 | TEST-0021 | Digital download gated — no purchase 403, admin 200 (RULE-0015) | **pass** |
 
-**E2E result: 21/21 passing** (catalog 4 + cart 4 + checkout 5 + account/orders 8).
+| TEST-0023 | Admin endpoints require auth (401) | **pass** |
+| TEST-0024 | RBAC: non-admin forbidden (403, RULE-0017) | **pass** |
+| TEST-0025 | Admin catalog CRUD → appears in storefront (FS-0011) | **pass** |
+| TEST-0026 | Admin order status transitions persist; illegal → 409 (FS-0012) | **pass** |
+| TEST-0027 | Gateway secret encrypted, never echoed/masked (RULE-0018) | **pass** |
+
+**E2E result: 26/26 passing** (catalog 4 + cart 4 + checkout 5 + account 8 + admin 5).
 Integration smoke (liveness, readiness, login, auth/me, catalog, cart merge) also green via curl.
+
+## Wave 5 — Admin & Analytics (FS-0011..0014, RULE-0016..0020)
+
+| Area | Test | Maps to | Type | Status |
+|------|------|---------|------|--------|
+| Product validation (catalog CRUD) | TEST-W5-01 | TEST-0025 | unit | green |
+| Order status transitions (forward-only) | TEST-W5-02 | TEST-0026 | unit | green |
+| Gateway secret encrypt/decrypt + mask (RULE-0018) | TEST-W5-03 | TEST-0027 | unit | green |
+| RBAC middleware 401/403/allow | TEST-W5-04 | TEST-0023/0024 | unit | green |
+| Admin tools guarded + off MCP | TEST-W5-05 | RISK-0015/0022 | unit | green |
+| Inventory tool schema | TEST-W5-06 | FS-0011 | unit | green |
+
+**Total unit suite: 37 passing** (`npm test`). DB/HTTP/RBAC flows in `tests/e2e/admin.e2e.spec.ts`.
 
 ## Wave 4 — Orders & Account (FS-0005/0006/0007/0009, RULE-0013/0014/0015/0020)
 

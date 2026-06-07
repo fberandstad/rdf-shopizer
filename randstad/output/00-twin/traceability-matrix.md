@@ -269,3 +269,25 @@ ADR-0001..ADR-0013 recorded in `target-architecture.md §6` (agentic paradigm, e
 | E2E coverage | `tests/e2e/account.e2e.spec.ts` | TEST-0015..0022 | — |
 
 **Orphan check (W4):** account/content logic centralized in `account.js`/`content.js`, shared by REST + agent tools. Owner-scoping enforced (addresses, orders, reviews tied to `user_id`); non-owner order reads return 404 (no info leak, RULE-0013). Digital downloads require admin or a PAID order (RULE-0015). Newsletter stores PII with explicit consent (FS-0007/DPR R9); payment data masked (RULE-0014). Unit suite `npm test` → 31/31; full Playwright suite → 21/21. No orphan rows; legacy source read-only.
+
+---
+
+# Stage 4 extension — Wave 5 (Admin & Analytics) — 2026-06-07
+
+## FS-0011..0014 / RULE-0016..0020 → generated code → test
+
+| Rule / capability | Generated file(s) (`04-forward/converted/`) | Golden master | Unit |
+|-------------------|----------------------------------------------|---------------|------|
+| RULE-0016 admin endpoints require auth | `middleware/rbac.js#requireAuth`, `routes/admin.js` (router.use) | TEST-0023 | TEST-W5-04 |
+| RULE-0017 admin authorization by role | `middleware/rbac.js#requireRole('admin')` | TEST-0024 | TEST-W5-04 |
+| FS-0011 admin catalog/category CRUD | `server/admin.js#createProduct/updateProduct/createCategory`, `routes/admin.js` | TEST-0025 | TEST-W5-01 |
+| FS-0011 inventory management | `server/admin.js#adjustStock` | TEST-0025 | TEST-W5-06 |
+| FS-0012 order management (state machine) | `server/admin.js#canTransition/updateOrderStatus`, `routes/admin.js` | TEST-0026 | TEST-W5-02 |
+| FS-0013/0014 gateway/shipping/tax config | `server/admin.js#saveGatewayConfig/listGatewayConfig`, `merchant_config` table | TEST-0027 | (E2E) |
+| RULE-0018 gateway creds encrypted at rest | `server/crypto.js#encryptSecret/decryptSecret/maskSecret` (AES-256-GCM) | TEST-0027 | TEST-W5-03 |
+| Analytics (allow-listed, role-scoped) | `routes/metricsQueries.js`, `routes/ops.js`, `tools getBusinessMetrics/getSystemHealth` | — | (W0) |
+| Admin agent tools (guarded HITL) | `tools/index.js` (`manageCatalog`/`manageInventory` guarded, off MCP, admin-role check) | — | TEST-W5-05 |
+| Admin UI | `client/pages/Admin.jsx` (catalog/orders/gateways tabs + KPIs), `Sidebar.jsx` (admin-only) | TEST-0025..0027 | (E2E) |
+| E2E coverage | `tests/e2e/admin.e2e.spec.ts` | TEST-0023..0027 | — |
+
+**Orphan check (W5):** admin logic centralized in `admin.js`; every admin route is `requireRole('admin')` (RULE-0016/0017) and agent admin tools are guarded (ClawBands HITL) + carry a defense-in-depth role check + are off MCP. Gateway secrets are AES-256-GCM encrypted at rest and never returned in plaintext (masked on read, RULE-0018; replaces legacy `EncryptionUtil`/DEBT-0016). Order transitions are forward-only (RULE-0012). Analytics use named, allow-listed queries (no free-form SQL). Unit suite `npm test` → 37/37; full Playwright suite → 26/26. No orphan rows; legacy source read-only.

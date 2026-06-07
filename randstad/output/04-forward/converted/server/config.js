@@ -23,6 +23,10 @@ module.exports = {
     defaultAdminEmail: process.env.DEFAULT_ADMIN_EMAIL || 'admin@randstad.fr',
     defaultAdminPassword: process.env.DEFAULT_ADMIN_PASSWORD || 'admin123',
   },
+  secrets: {
+    // Key for encrypting merchant gateway credentials at rest (RULE-0018). Set in prod.
+    configKey: process.env.CONFIG_ENC_KEY || process.env.SESSION_SECRET || 'dev-insecure-config-enc-key-change-me',
+  },
   agent: {
     maxToolIterations: parseInt(process.env.AGENT_MAX_TOOL_ITERATIONS || '12', 10),
     guardedTools: (process.env.CLAWBANDS_GUARDED_TOOLS ||

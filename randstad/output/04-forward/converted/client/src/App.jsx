@@ -11,6 +11,7 @@ import Cart from './pages/Cart';
 import Checkout from './pages/Checkout';
 import Orders from './pages/Orders';
 import Account from './pages/Account';
+import Admin from './pages/Admin';
 import Health from './pages/Health';
 import Knowledge from './pages/Knowledge';
 
@@ -34,6 +35,7 @@ function AppContent({ authUser, onLogout, aiEnabled }) {
       case 'checkout': return <Checkout onNavigate={setCurrentPage} />;
       case 'orders': return <Orders />;
       case 'account': return <Account />;
+      case 'admin': return <Admin />;
       case 'knowledge': return <Knowledge />;
       case 'health': return <Health userRole={authUser?.role} />;
       default: return <Storefront />;

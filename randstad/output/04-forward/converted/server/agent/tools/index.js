@@ -8,6 +8,7 @@ const metrics = require('./../../routes/metricsQueries');
 const cart = require('./../../cart');
 const orders = require('./../../orders');
 const content = require('./../../content');
+const admin = require('./../../admin');
 const config = require('./../../config');
 
 const tools = [
@@ -193,6 +194,35 @@ const tools = [
       period: z.enum(['today', 'week', 'month', 'ytd']).optional(),
     }),
     handler: async ({ metric, period = 'today' }, ctx) => metrics.businessMetric(metric, period, ctx),
+  },
+  {
+    name: 'manageCatalog',
+    description: 'Create or update a product (admin). Guarded: requires human approval (ClawBands).',
+    sensitivity: 'guarded',
+    parameters: z.object({
+      action: z.enum(['create', 'update']),
+      sku: z.string(),
+      name: z.string().optional(),
+      priceCents: z.number().int().min(0).optional(),
+      description: z.string().optional(),
+      categoryCode: z.string().optional(),
+      stock: z.number().int().min(0).optional(),
+      enabled: z.boolean().optional(),
+    }),
+    handler: async ({ action, sku, ...rest }, ctx) => {
+      if (ctx.role && ctx.role !== 'admin') { const e = new Error('admin role required'); e.code = 'FORBIDDEN'; throw e; }
+      return action === 'create' ? admin.createProduct({ sku, ...rest }) : admin.updateProduct(sku, rest);
+    },
+  },
+  {
+    name: 'manageInventory',
+    description: 'Adjust product stock by a signed delta (admin). Guarded: requires human approval.',
+    sensitivity: 'guarded',
+    parameters: z.object({ sku: z.string(), delta: z.number().int() }),
+    handler: async ({ sku, delta }, ctx) => {
+      if (ctx.role && ctx.role !== 'admin') { const e = new Error('admin role required'); e.code = 'FORBIDDEN'; throw e; }
+      return admin.adjustStock(sku, delta);
+    },
   },
 ];
 

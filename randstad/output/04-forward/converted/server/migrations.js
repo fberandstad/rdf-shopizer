@@ -174,6 +174,17 @@ const STATEMENTS = [
      consent BOOLEAN NOT NULL DEFAULT true,
      created_at TIMESTAMPTZ NOT NULL DEFAULT now()
    )`,
+
+  // --- Admin (Wave 5: FS-0013/0014, RULE-0018) ---
+  // Merchant gateway/shipping/tax config. Secrets stored ENCRYPTED at rest (never plaintext).
+  `CREATE TABLE IF NOT EXISTS merchant_config (
+     gateway TEXT PRIMARY KEY,            -- e.g. 'stripe' | 'paypal' | 'shipping' | 'tax'
+     enabled BOOLEAN NOT NULL DEFAULT false,
+     mode TEXT,                           -- authorize | capture | authorizeAndCapture
+     secret_encrypted TEXT,               -- AES-256-GCM envelope (RULE-0018)
+     settings JSONB NOT NULL DEFAULT '{}'::jsonb,
+     updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+   )`,
 ];
 
 async function runMigrations() {
