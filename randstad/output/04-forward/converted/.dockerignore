@@ -1,0 +1,16 @@
+# Keep the build context small and secret-free (Wave 7).
+**/node_modules
+**/dist
+client-dist
+.git
+.github
+.env
+.env.*
+!.env.example
+npm-debug.log*
+**/*.log
+docs
+infra
+README.md
+**/test-results
+**/playwright-report

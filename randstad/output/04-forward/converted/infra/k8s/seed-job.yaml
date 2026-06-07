@@ -1,0 +1,24 @@
+# One-shot data seed (demo catalog + default admin). Run AFTER the DB is ready, ONCE.
+# Migrations run automatically on app boot, so this is only for initial sample data.
+#   kubectl -n shopiclaw apply -f infra/k8s/seed-job.yaml
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: shopiclaw-seed
+  namespace: shopiclaw
+spec:
+  backoffLimit: 3
+  ttlSecondsAfterFinished: 600
+  template:
+    spec:
+      restartPolicy: Never
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+      containers:
+        - name: seed
+          image: ghcr.io/fberandstad/rdf-shopizer:latest
+          command: ["node", "seed.js"]
+          envFrom:
+            - configMapRef: { name: shopiclaw-config }
+            - secretRef: { name: shopiclaw-secrets }
