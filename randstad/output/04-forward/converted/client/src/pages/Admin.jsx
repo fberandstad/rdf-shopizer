@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Package, ClipboardList, KeyRound, Plus, BarChart3 } from 'lucide-react';
+import { Package, ClipboardList, KeyRound, Plus, BarChart3, Activity, Play } from 'lucide-react';
 import { api } from '../config';
 import KpiCard from '../components/KpiCard';
 
@@ -7,6 +7,7 @@ const TABS = [
   { id: 'catalog', label: 'Catalog', icon: Package },
   { id: 'orders', label: 'Orders', icon: ClipboardList },
   { id: 'config', label: 'Gateways', icon: KeyRound },
+  { id: 'activity', label: 'Activity', icon: Activity },
 ];
 const ORDER_NEXT = { AWAITING_PAYMENT: ['CANCELLED'], PAID: ['FULFILLED', 'CANCELLED'], CREATED: ['CANCELLED'], FULFILLED: [], CANCELLED: [] };
 
@@ -127,6 +128,36 @@ function Gateways({ notify }) {
   );
 }
 
+function ActivityTab({ notify }) {
+  const [notes, setNotes] = useState([]);
+  const [running, setRunning] = useState(false);
+  const load = () => api('/api/admin/notifications').then(setNotes).catch(() => {});
+  useEffect(load, []);
+  const run = async () => {
+    setRunning(true);
+    try { const r = await api('/api/admin/heartbeat/run', { method: 'POST', body: '{}' });
+      notify('ok', `Heartbeat ran — ${r.lowStock} low-stock, ${r.abandoned} abandoned`); load();
+    } catch (e) { notify('err', e.message); } finally { setRunning(false); }
+  };
+  return (
+    <div className="card">
+      <div className="flex items-center justify-between mb-3">
+        <h3 className="font-semibold">Notifications &amp; Heartbeat</h3>
+        <button className="btn btn-primary flex items-center gap-1" onClick={run} disabled={running}>
+          <Play size={16} /> {running ? 'Running…' : 'Run heartbeat'}
+        </button>
+      </div>
+      {notes.length === 0 && <div className="text-sm text-gray-500">No notifications yet.</div>}
+      {notes.map((n) => (
+        <div key={n.id} className="border-b border-gray-100 py-2 text-sm">
+          <span className="pill pill-gray mr-2">{n.type}</span>{n.subject}
+          <span className="text-gray-400 ml-2">→ {n.recipient || n.channel}</span>
+        </div>
+      ))}
+    </div>
+  );
+}
+
 export default function Admin() {
   const [tab, setTab] = useState('catalog');
   const [msg, setMsg] = useState(null);
@@ -147,6 +178,7 @@ export default function Admin() {
       {tab === 'catalog' && <Catalog notify={notify} />}
       {tab === 'orders' && <Orders notify={notify} />}
       {tab === 'config' && <Gateways notify={notify} />}
+      {tab === 'activity' && <ActivityTab notify={notify} />}
     </div>
   );
 }

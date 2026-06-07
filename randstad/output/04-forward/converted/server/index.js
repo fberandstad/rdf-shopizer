@@ -11,6 +11,7 @@ const { pool } = require('./db');
 const { runMigrations } = require('./migrations');
 const { setupAuth, ensureDefaultAdmin } = require('./auth');
 const { requireAuth } = require('./middleware/rbac');
+const { securityHeaders } = require('./middleware/security');
 const { createCopilotHandler } = require('./agent/gateway');
 const mcp = require('./agent/mcp');
 const heartbeat = require('./agent/heartbeat');
@@ -27,9 +28,12 @@ const accountRoutes = require('./routes/account');
 const newsletterRoutes = require('./routes/newsletter');
 const fileRoutes = require('./routes/files');
 const adminRoutes = require('./routes/admin');
+const interopRoutes = require('./routes/interop');
 
 const app = express();
 
+app.disable('x-powered-by');
+app.use(securityHeaders);                 // CSP/HSTS/anti-clickjacking (RISK-0010/0011, DPR-0001)
 app.use(cors({ origin: true, credentials: true }));
 app.use(express.json({ limit: '10mb' }));
 
@@ -37,11 +41,26 @@ app.use(express.json({ limit: '10mb' }));
 const { sessionMiddleware, authRouter } = setupAuth(pool);
 app.use(sessionMiddleware);
 app.use((req, res, next) => { if (req.session?.user) req.user = req.session.user; next(); });
-app.use('/auth', authRouter);
+// Strict per-IP limiter on auth to blunt credential stuffing / brute force (RISK-0020).
+// Strict in production; lenient in dev/test/CI so suites that register many users don't trip it.
+const authMax = config.nodeEnv === 'production' ? 20 : 2000;
+const authLimiter = rateLimit({ windowMs: 15 * 60_000, max: authMax, standardHeaders: true, legacyHeaders: false });
+app.use('/auth', authLimiter, authRouter);
 
 // --- Public ops (no auth) ---
 app.get('/api/health', (req, res) => res.json({ status: 'ok' }));
 app.get('/api/copilotkit-health', (req, res) => res.json({ ok: !!config.openai.apiKey }));
+// AI transparency disclosure (DPR-0012): users are told they interact with an AI agent
+// and how to reach a human. Public so the client can show it pre-auth.
+app.get('/api/ai-disclosure', (req, res) => res.json({
+  agent: 'ShopiClaw',
+  aiPowered: true,
+  notice: 'You are chatting with ShopiClaw, an AI shopping assistant. Responses may be ' +
+    'automated. Consequential actions (payments, refunds, admin changes) require human ' +
+    'approval (ClawBands). For human help, contact support or ask to escalate.',
+  humanEscalation: 'mailto:support@randstad.fr',
+  rights: { access: 'GET /api/account/export', erasure: 'DELETE /api/account', withdrawConsent: 'POST /api/newsletter/withdraw' },
+}));
 
 // --- MCP server (own per-client bearer auth; not session-gated) ---
 const mcpLimiter = rateLimit({ windowMs: 60_000, max: 60 });
@@ -55,7 +74,9 @@ const apiLimiter = rateLimit({ windowMs: 60_000, max: 300 });
 app.use('/api', apiLimiter, (req, res, next) => {
   if (req.path === '/health' || req.path === '/copilotkit-health' ||
       req.path.startsWith('/copilotkit') ||
-      req.path === '/ops/health' || req.path === '/ops/ready') {
+      req.path === '/ops/health' || req.path === '/ops/ready' ||
+      req.path === '/ai-disclosure' ||
+      req.path.startsWith('/interop')) {   // interop has its own per-client bearer auth (FS-0015)
     return next();
   }
   return requireAuth(req, res, next);
@@ -67,6 +88,7 @@ app.use('/api/account', accountRoutes);
 app.use('/api/newsletter', newsletterRoutes);
 app.use('/api/files', fileRoutes);
 app.use('/api/admin', adminRoutes);
+app.use('/api/interop', interopRoutes);
 app.use('/api/cart', cartRoutes);
 app.use('/api/checkout', checkoutRoutes);
 app.use('/api/orders', orderRoutes);

@@ -10,4 +10,11 @@ router.post('/', async (req, res) => {
   catch (e) { res.status(e.code === 'VALIDATION' ? 422 : 500).json({ error: e.message }); }
 });
 
+// DPR-0008: consent withdrawal / unsubscribe (right to withdraw marketing consent).
+router.post('/withdraw', async (req, res) => {
+  const { email } = req.body || {};
+  try { res.json(await content.withdrawConsent(email)); }
+  catch (e) { res.status(e.code === 'VALIDATION' ? 422 : 500).json({ error: e.message }); }
+});
+
 module.exports = router;

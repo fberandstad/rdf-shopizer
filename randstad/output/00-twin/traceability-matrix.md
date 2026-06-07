@@ -291,3 +291,46 @@ ADR-0001..ADR-0013 recorded in `target-architecture.md §6` (agentic paradigm, e
 | E2E coverage | `tests/e2e/admin.e2e.spec.ts` | TEST-0023..0027 | — |
 
 **Orphan check (W5):** admin logic centralized in `admin.js`; every admin route is `requireRole('admin')` (RULE-0016/0017) and agent admin tools are guarded (ClawBands HITL) + carry a defense-in-depth role check + are off MCP. Gateway secrets are AES-256-GCM encrypted at rest and never returned in plaintext (masked on read, RULE-0018; replaces legacy `EncryptionUtil`/DEBT-0016). Order transitions are forward-only (RULE-0012). Analytics use named, allow-listed queries (no free-form SQL). Unit suite `npm test` → 37/37; full Playwright suite → 26/26. No orphan rows; legacy source read-only.
+
+---
+
+# Stage 4 extension — Wave 6 (Interop & Heartbeat) — 2026-06-07
+
+## FS-0015 / ADR-0009/0013 → generated code → test
+
+| Rule / capability | Generated file(s) (`04-forward/converted/`) | Golden master | Unit |
+|-------------------|----------------------------------------------|---------------|------|
+| FS-0015 SOAP→REST customer service | `routes/interop.js` `/v1/customers/:id` (PII-minimized) | TEST-0028 | (E2E) |
+| FS-0015 SOAP→REST invoice service | `routes/interop.js` `/v1/invoices/:orderId` (masked payment, RULE-0014) | TEST-0028b | (E2E) |
+| ADR-0009 WSDL→OpenAPI descriptor | `routes/interop.js` `/` + `/openapi.json` (replaces `salesManager*Service`) | TEST-0028 | (E2E) |
+| Interop per-client bearer auth | `routes/interop.js#authenticate`, `config.interop.clientTokens` | — | (E2E) |
+| ADR-0013 full MCP server | `agent/mcp.js` (initialize/ping, tools/list+inputSchema, resources/list+read) | — | TEST-W6-04 |
+| RISK-0022 MCP default-deny money-path | `agent/mcp.js` (MCP_SAFE allow-list, 403 on guarded) | — | TEST-W6-04 |
+| Heartbeat low-stock / abandoned-cart / briefing | `agent/heartbeat.js` (checkLowStock/checkAbandonedCarts/dailyBriefing) | — | TEST-W6-02/03 |
+| Cost-control LLM escalation (deterministic) | `agent/heartbeat.js#shouldEscalate` | — | TEST-W6-03 |
+| Notification service (replaces EmailUtil/SMTP) | `notifications.js`, `notification` table, `orders.js#notifyOrderConfirmed` (RULE-0022) | — | TEST-W6-01/05 |
+| Admin notifications/heartbeat UI | `routes/admin.js` (`/notifications`, `/heartbeat/run`), `client/pages/Admin.jsx` (Activity tab) | — | (E2E) |
+| E2E coverage | `tests/e2e/interop.e2e.spec.ts` | TEST-0028 + MCP/heartbeat | — |
+
+**Orphan check (W6):** the legacy JAX-WS services (`salesManagerCustomerService`, `salesManagerInvoiceService`, DEBT-0007) are replaced by a versioned, documented REST facade (`/api/interop/v1` + OpenAPI), token-authed, read-only, PII-minimized, payment masked (RULE-0014). The MCP server exposes only read/safe tools (default-deny money-path, RISK-0022) with proper lifecycle + resources. Heartbeat performs cheap deterministic checks first and escalates to the LLM only on significant signals (cost control); all jobs emit persisted notifications (replacing `EmailUtil`/SMTP). Unit suite `npm test` → 42/42; full Playwright suite → 32/32. No orphan rows; legacy source read-only.
+
+---
+
+# Stage 4 extension — Wave 7 (Hardening & Compliance) — 2026-06-07
+
+## RISK-#### / DPR-#### → generated control → test
+
+| Control / requirement | Generated file(s) (`04-forward/converted/`) | Risk/DPR | Test |
+|-----------------------|----------------------------------------------|----------|------|
+| Security headers: CSP, HSTS, anti-clickjacking, nosniff | `middleware/security.js`, `index.js` | RISK-0010/0011, DPR-0001 | TEST-W7-01/02 + E2E |
+| Auth brute-force rate limit (strict in prod) | `index.js` `authLimiter` | RISK-0020 | (config) |
+| GDPR access/portability export | `gdpr.js#exportData`, `routes/account.js` `/export` | DPR-0005 | E2E |
+| GDPR erasure cascading to pgvector memory + logs; orders anonymized | `gdpr.js#eraseUser`, `app_user.deleted_at` | DPR-0006 | E2E |
+| Marketing consent withdrawal | `content.js#withdrawConsent`, `routes/newsletter.js` `/withdraw` | DPR-0008 | TEST-W7-04 + E2E |
+| Retention purge schedule | `retention.js`, `routes/admin.js` `/retention/run`, config windows | DPR-0011 | TEST-W7-03 + E2E |
+| AI transparency + human escalation | `index.js` `/api/ai-disclosure`, client banner | DPR-0012/0013 | E2E |
+| DPIA / RoPA / retention policy | `docs/compliance/{DPIA,RoPA,retention-policy}.md` | DPR-0015/0017/0018 | (doc) |
+| CI/CD gates (secret scan, SCA, tests, build) | `.github/workflows/ci.yml` | RISK-0002/0019 | (pipeline) |
+| Client GDPR controls (export/delete/withdraw) | `client/pages/Account.jsx` | DPR-0005/0006/0008 | E2E |
+
+**Orphan check (W7):** security headers (CSP/HSTS/nosniff/frame-deny) applied globally; X-Powered-By stripped (RISK-0010/0011, DPR-0001). GDPR rights implemented end-to-end: export (DPR-0005), erasure cascading to relational rows + agent logs + **pgvector memory** with order anonymization for legal retention (DPR-0006/0011), consent withdrawal (DPR-0008). AI transparency endpoint + human escalation (DPR-0012/0013). DPIA/RoPA/retention docs recorded (DPR-0015/0017/0018). CI/CD pipeline gates secret-scan + SCA + unit + golden-master E2E; **deploy is gated/manual (HITL), never auto-run.** Unit suite `npm test` → 46/46; full Playwright suite → 38/38. **Golden-master TEST-0001..0028 all green.** No orphan rows; legacy source read-only.

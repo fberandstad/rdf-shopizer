@@ -101,8 +101,47 @@ chromium && npx playwright test`).
 | TEST-0026 | Admin order status transitions persist; illegal → 409 (FS-0012) | **pass** |
 | TEST-0027 | Gateway secret encrypted, never echoed/masked (RULE-0018) | **pass** |
 
-**E2E result: 26/26 passing** (catalog 4 + cart 4 + checkout 5 + account 8 + admin 5).
+| TEST-0028 | SOAP→REST: service descriptor + OpenAPI reachable (replaces WSDL) | **pass** |
+| TEST-0028b | Interop invoice service masked payment; raw token never exposed | **pass** |
+| MCP | initialize + tools/list (inputSchema), guarded hidden, default-deny 403 | **pass** |
+| MCP-auth | invalid/absent client token → 401 | **pass** |
+| Heartbeat | admin runs jobs → notifications persisted (briefing) | **pass** |
+
+| RISK-0011 | Security headers/CSP present (nosniff, frame-options, no X-Powered-By) | **pass** |
+| DPR-0012 | AI transparency disclosure public + rights listed | **pass** |
+| DPR-0005 | Data export returns subject's personal data | **pass** |
+| DPR-0006 | Erasure removes PII + scrubs creds (cascade incl. pgvector) | **pass** |
+| DPR-0008 | Marketing consent withdrawal | **pass** |
+| DPR-0011 | Admin retention purge | **pass** |
+
+**E2E result: 38/38 passing** (catalog 4 + cart 4 + checkout 5 + account 8 + admin 5 + interop/MCP/heartbeat 6 + compliance 6).
 Integration smoke (liveness, readiness, login, auth/me, catalog, cart merge) also green via curl.
+Note: MCP/interop data endpoints need a client token — start the server with
+`MCP_CLIENT_TOKENS='{"partner":"interop-test-token"}'` for the interop E2E spec.
+
+## Wave 7 — Hardening & Compliance (RISK-0010/0011/0020, DPR-0005/0006/0008/0011/0012)
+
+| Area | Test | Maps to | Type | Status |
+|------|------|---------|------|--------|
+| CSP locks sources (XSS/clickjacking) | TEST-W7-01 | RISK-0011 | unit | green |
+| Security headers applied; fingerprint stripped | TEST-W7-02 | RISK-0010/0011 | unit | green |
+| Retention cutoff window correct | TEST-W7-03 | DPR-0011 | unit | green |
+| Consent withdrawal validates before write | TEST-W7-04 | DPR-0008 | unit | green |
+
+**Total unit suite: 46 passing** (`npm test`). DB/HTTP compliance flows in `tests/e2e/compliance.e2e.spec.ts`.
+CI/CD pipeline (gated, no auto-deploy): `converted/.github/workflows/ci.yml` (gitleaks + npm audit + unit + Playwright E2E with pgvector service).
+
+## Wave 6 — Interop & Heartbeat (FS-0015, ADR-0009/0013)
+
+| Area | Test | Maps to | Type | Status |
+|------|------|---------|------|--------|
+| Notification formatters (PII-minimized) | TEST-W6-01 | RULE-0022 | unit | green |
+| Abandoned-cart detection (pure) | TEST-W6-02 | heartbeat | unit | green |
+| Deterministic LLM escalation (cost control) | TEST-W6-03 | heartbeat | unit | green |
+| MCP default-deny money-path | TEST-W6-04 | RISK-0022 | unit | green |
+| Notification validation | TEST-W6-05 | — | unit | green |
+
+**Total unit suite: 42 passing** (`npm test`). DB/HTTP/protocol flows in `tests/e2e/interop.e2e.spec.ts`.
 
 ## Wave 5 — Admin & Analytics (FS-0011..0014, RULE-0016..0020)
 

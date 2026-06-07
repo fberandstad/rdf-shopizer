@@ -35,10 +35,24 @@ module.exports = {
   heartbeat: {
     enabled: String(process.env.HEARTBEAT_ENABLED).toLowerCase() === 'true',
     cron: process.env.HEARTBEAT_CRON || '*/30 * * * *',
+    lowStockThreshold: parseInt(process.env.LOW_STOCK_THRESHOLD || '5', 10),
+    abandonedCartHours: parseInt(process.env.ABANDONED_CART_HOURS || '24', 10),
   },
   mcp: {
     enabled: String(process.env.MCP_ENABLED).toLowerCase() !== 'false',
     clientTokens: safeJson(process.env.MCP_CLIENT_TOKENS, {}),
+  },
+  interop: {
+    // SOAP→REST facade (FS-0015, ADR-0009). External B2B systems authenticate with a bearer
+    // token (replacing JAX-WS endpoints). Read-only, PII-minimized. Falls back to MCP tokens.
+    enabled: String(process.env.INTEROP_ENABLED).toLowerCase() !== 'false',
+    clientTokens: safeJson(process.env.INTEROP_CLIENT_TOKENS, null) || safeJson(process.env.MCP_CLIENT_TOKENS, {}),
+  },
+  retention: {
+    // GDPR data-retention schedule (DPR-0011). Auto-purge windows in days.
+    agentMessageDays: parseInt(process.env.RETENTION_AGENT_MESSAGE_DAYS || '90', 10),
+    toolAuditDays: parseInt(process.env.RETENTION_TOOL_AUDIT_DAYS || '365', 10),
+    notificationDays: parseInt(process.env.RETENTION_NOTIFICATION_DAYS || '180', 10),
   },
   psp: {
     provider: process.env.PSP_PROVIDER || 'mock',

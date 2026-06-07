@@ -7,35 +7,35 @@
 
 ## Security
 
-- [ ] TLS-only + HSTS (RISK-0010, DPR-0001)
-- [ ] Session cookies HttpOnly/Secure/SameSite; rotation/expiry (RISK-0013)
-- [ ] RBAC + owner checks (RULE-0013/0016/0017; RISK-0012)
-- [ ] Zod validation at HTTP + tool boundaries (RISK-0011)
-- [ ] CSP + output encoding (XSS; RISK-0011)
-- [ ] Secrets via Aquaman broker; CI secret scanning (RISK-0002, DPR-0004)
-- [ ] Payment tokenization; no PAN anywhere (RISK-0001, DPR-0003)
-- [ ] Rate limiting (HTTP + per-tool + MCP) (RISK-0020/0022)
-- [ ] Dependency SCA + SBOM (RISK-0019)
+- [x] TLS-only + HSTS (RISK-0010, DPR-0001) — `middleware/security.js` (HSTS in prod)
+- [x] Session cookies HttpOnly/Secure/SameSite; rotation/expiry (RISK-0013) — `auth.js`
+- [x] RBAC + owner checks (RULE-0013/0016/0017; RISK-0012) — `middleware/rbac.js`, services
+- [x] Zod validation at HTTP + tool boundaries (RISK-0011) — tool schemas + assert* validators
+- [x] CSP + output encoding (XSS; RISK-0011) — `middleware/security.js` CSP
+- [~] Secrets via Aquaman broker; CI secret scanning (RISK-0002, DPR-0004) — gateway secrets AES-256-GCM at rest (RULE-0018); gitleaks gate in CI; full broker = ops
+- [x] Payment tokenization; no PAN anywhere (RISK-0001, DPR-0003) — W3 `payments.js`
+- [x] Rate limiting (HTTP + per-tool + MCP) (RISK-0020/0022) — `index.js` limiters
+- [~] Dependency SCA + SBOM (RISK-0019) — `npm audit` gate in CI; SBOM = release step
 
 ## Agent / LLM
 
-- [ ] Prompt-injection: instruction/data separation, RAG allow-list (RISK-0014)
-- [ ] ClawBands HITL on guarded/money-path tools (RISK-0015)
-- [ ] Aquaman: no secrets/PII in prompts (RISK-0016, DPR-0009)
-- [ ] RAG grounding; server-authoritative pricing (RISK-0017; RULE-0007)
-- [ ] Tool-call audit (`tool_audit`) incl. MCP client id (RISK-0021)
-- [ ] Iteration cap (12) + per-session serialization
-- [ ] MCP: guarded tools not exposed by default; per-client allow-list (RISK-0022/0023)
-- [ ] Analytics: named allow-listed queries only; role-scoped (RISK-0024)
+- [x] Prompt-injection: instruction/data separation, RAG allow-list (RISK-0014) — `agent/AGENTS.md`, gateway
+- [x] ClawBands HITL on guarded/money-path tools (RISK-0015) — `agent/clawbands.js`
+- [x] Aquaman: no secrets/PII in prompts (RISK-0016, DPR-0009) — `agent/aquaman.js` (`useCredential`/`redact`)
+- [x] RAG grounding; server-authoritative pricing (RISK-0017; RULE-0007) — `cart.js`/`orders.js`, RAG retriever
+- [x] Tool-call audit (`tool_audit`) incl. MCP client id (RISK-0021) — `agent/clawbands.js`
+- [x] Iteration cap (12) + per-session serialization — agent gateway
+- [x] MCP: guarded tools not exposed by default; per-client allow-list (RISK-0022/0023) — `agent/mcp.js`
+- [x] Analytics: named allow-listed queries only; role-scoped (RISK-0024) — `routes/metricsQueries.js`
 
 ## Compliance (GDPR/PCI/AI)
 
-- [ ] Consent capture for marketing (DPR-0008)
-- [ ] Data-subject access/erasure incl. vector memory + RAG (DPR-0005/0006)
-- [ ] Retention schedule + purge jobs (DPR-0011)
-- [ ] AI transparency + human escalation (DPR-0012/0013)
-- [ ] DPIA for agent (DPR-0015); OpenAI DPA/region (DPR-0017); RoPA (DPR-0018)
-- [ ] PCI SAQ-A posture (tokenization)
+- [x] Consent capture for marketing (DPR-0008) — `content.subscribe`/`withdrawConsent`
+- [x] Data-subject access/erasure incl. vector memory + RAG (DPR-0005/0006) — `gdpr.js` (cascades `agent_memory`)
+- [x] Retention schedule + purge jobs (DPR-0011) — `retention.js`, admin/heartbeat trigger
+- [x] AI transparency + human escalation (DPR-0012/0013) — `/api/ai-disclosure`, ClawBands HITL
+- [x] DPIA for agent (DPR-0015); OpenAI DPA/region (DPR-0017); RoPA (DPR-0018) — `docs/compliance/`
+- [x] PCI SAQ-A posture (tokenization) — no PAN; tokenized refs only
 
 ## Performance / scalability
 
@@ -51,6 +51,6 @@
 
 ## Quality
 
-- [ ] Golden-master E2E (TEST-0001..0028) green on target
-- [ ] Unit + integration coverage gate
-- [ ] Lint/format CI; conventional commits; PR review
+- [x] Golden-master E2E (TEST-0001..0028) green on target — 38/38 Playwright
+- [x] Unit + integration coverage gate — 46/46 unit (`npm test`)
+- [x] Lint/format CI; conventional commits; PR review — `.github/workflows/ci.yml` (gated, no auto-deploy)

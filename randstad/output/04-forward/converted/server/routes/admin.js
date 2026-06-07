@@ -3,6 +3,9 @@
 // masked on read). Analytics live under /api/ops/metrics/business.
 const express = require('express');
 const admin = require('./../admin');
+const notifications = require('./../notifications');
+const heartbeat = require('./../agent/heartbeat');
+const retention = require('./../retention');
 const { requireRole } = require('./../middleware/rbac');
 
 const router = express.Router();
@@ -43,6 +46,24 @@ router.get('/config', async (req, res) => {
 });
 router.put('/config/:gateway', async (req, res) => {
   try { res.json(await admin.saveGatewayConfig(req.params.gateway, req.body || {})); } catch (e) { mapError(res, e); }
+});
+
+// --- Notifications & Heartbeat (Wave 6) ---
+router.get('/notifications', async (req, res) => {
+  try { res.json(await notifications.list({ type: req.query.type, limit: 100 })); } catch (e) { mapError(res, e); }
+});
+// Manually run the proactive heartbeat (low-stock/abandoned-cart/briefing) and return the briefing.
+router.post('/heartbeat/run', async (req, res) => {
+  try {
+    const lowStock = await heartbeat.checkLowStock();
+    const abandoned = await heartbeat.checkAbandonedCarts();
+    const briefing = await heartbeat.dailyBriefing();
+    res.json({ lowStock: lowStock.length, abandoned: abandoned.length, briefing: briefing.stats });
+  } catch (e) { mapError(res, e); }
+});
+// Run the GDPR retention purge (DPR-0011) on demand and return purge counts.
+router.post('/retention/run', async (req, res) => {
+  try { res.json(await retention.purge()); } catch (e) { mapError(res, e); }
 });
 
 module.exports = router;

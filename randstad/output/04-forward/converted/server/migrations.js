@@ -185,6 +185,25 @@ const STATEMENTS = [
      settings JSONB NOT NULL DEFAULT '{}'::jsonb,
      updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
    )`,
+
+  // --- Interop & Heartbeat (Wave 6) ---
+  // Notifications: order confirmations (RULE-0022), heartbeat alerts/briefings. PII-minimized.
+  `CREATE TABLE IF NOT EXISTS notification (
+     id SERIAL PRIMARY KEY,
+     type TEXT NOT NULL,                  -- order_confirmation | low_stock | abandoned_cart | briefing
+     channel TEXT NOT NULL DEFAULT 'log', -- log | email (provider in later env)
+     recipient TEXT,                      -- email or 'merchant'/'admin'
+     subject TEXT NOT NULL,
+     body TEXT NOT NULL,
+     meta JSONB NOT NULL DEFAULT '{}'::jsonb,
+     created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+   )`,
+  `CREATE INDEX IF NOT EXISTS notification_type_idx ON notification(type, created_at DESC)`,
+
+  // --- Hardening & Compliance (Wave 7) ---
+  // GDPR erasure (DPR-0006): mark accounts as erased while preserving anonymized order
+  // rows for legal/tax retention (DPR-0011). PII columns are scrubbed on erasure.
+  `ALTER TABLE app_user ADD COLUMN IF NOT EXISTS deleted_at TIMESTAMPTZ`,
 ];
 
 async function runMigrations() {

@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
-import { User, MapPin, Mail, Trash2, Plus } from 'lucide-react';
-import { api } from '../config';
+import { User, MapPin, Mail, Trash2, Plus, Shield, Download, AlertTriangle } from 'lucide-react';
+import { api, API_BASE } from '../config';
 
 const EMPTY_ADDR = { label: '', line1: '', city: '', postalCode: '', country: 'FR', isDefault: false };
 
@@ -48,6 +48,24 @@ export default function Account() {
     try {
       await api('/api/newsletter', { method: 'POST', body: JSON.stringify({ email: newsletter, consent: true }) });
       setNewsletter(''); setMsg({ type: 'ok', text: 'Subscribed to newsletter' });
+    } catch (err) { setMsg({ type: 'err', text: err.message }); }
+  };
+
+  const withdraw = async () => {
+    setMsg(null);
+    try {
+      await api('/api/newsletter/withdraw', { method: 'POST', body: JSON.stringify({ email: profile.email }) });
+      setMsg({ type: 'ok', text: 'Marketing consent withdrawn' });
+    } catch (err) { setMsg({ type: 'err', text: err.message }); }
+  };
+
+  const exportData = () => { window.location.href = `${API_BASE}/api/account/export`; };
+
+  const deleteAccount = async () => {
+    if (!window.confirm('Permanently erase your account and personal data? Orders are kept anonymized for legal reasons. This cannot be undone.')) return;
+    try {
+      await api('/api/account', { method: 'DELETE' });
+      window.location.reload(); // session destroyed server-side
     } catch (err) { setMsg({ type: 'err', text: err.message }); }
   };
 
@@ -109,8 +127,28 @@ export default function Account() {
             value={newsletter} onChange={(e) => setNewsletter(e.target.value)} />
           <button className="btn btn-primary">Subscribe</button>
         </div>
-        <div className="text-xs text-gray-500 mt-2">You consent to receive marketing emails. Unsubscribe anytime.</div>
+        <div className="flex items-center justify-between mt-2">
+          <div className="text-xs text-gray-500">You consent to receive marketing emails. Unsubscribe anytime.</div>
+          <button type="button" className="text-xs text-randstad-blue underline" onClick={withdraw}>Withdraw consent</button>
+        </div>
       </form>
+
+      <div className="card">
+        <h3 className="font-semibold mb-3 flex items-center gap-2"><Shield size={16} /> Privacy &amp; your data</h3>
+        <p className="text-sm text-gray-600 mb-3">
+          Under GDPR you can export a copy of your data or request erasure. Erasure removes your
+          personal data and AI conversation history; order records are retained in anonymized form
+          for legal/tax obligations.
+        </p>
+        <div className="flex gap-3">
+          <button type="button" className="btn btn-ghost flex items-center gap-1" onClick={exportData}>
+            <Download size={16} /> Export my data
+          </button>
+          <button type="button" className="btn flex items-center gap-1 text-red-600 border border-red-200" onClick={deleteAccount}>
+            <AlertTriangle size={16} /> Delete my account
+          </button>
+        </div>
+      </div>
     </div>
   );
 }

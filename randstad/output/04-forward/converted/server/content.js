@@ -60,6 +60,15 @@ async function subscribe(email, consent = true) {
   return { ok: true };
 }
 
+// DPR-0008: withdraw marketing consent (records withdrawal; unsubscribes).
+async function withdrawConsent(email) {
+  const e = String(email || '').trim().toLowerCase();
+  if (!EMAIL_RE.test(e)) throw err('valid email required');
+  const { rowCount } = await pool.query(
+    `UPDATE newsletter_subscriber SET consent=false WHERE email=$1`, [e]);
+  return { ok: true, withdrawn: rowCount > 0 };
+}
+
 // --- Invoice (FS-0005, RULE-0014/0020) ---
 async function getInvoice(owner, orderId) {
   const { rows } = await pool.query('SELECT * FROM orders WHERE id=$1', [orderId]);
@@ -105,5 +114,5 @@ async function authorizeDownload(owner, sku) {
 
 module.exports = {
   supportedCards, assertReview, canDownload, // pure (unit-tested)
-  listReviews, submitReview, subscribe, getInvoice, authorizeDownload,
+  listReviews, submitReview, subscribe, withdrawConsent, getInvoice, authorizeDownload,
 };

@@ -58,9 +58,12 @@ async function loadOrderItems(id) {
   return rows;
 }
 
-// Confirmation hook (RULE-0022). Real SMTP integration is a later wave; we log + audit-safe.
+// Confirmation hook (RULE-0022). Persists a notification (W6 notification service).
+// Best-effort: a notification failure must never break the payment path.
 function notifyOrderConfirmed(order) {
-  console.log(`[orders] confirmation for order ${order.id} -> ${order.customer_email}`);
+  const notifications = require('./notifications');
+  notifications.send(notifications.formatOrderConfirmation(order))
+    .catch((e) => console.error('[orders] confirmation notify failed:', e.message));
 }
 
 // Create an order in AWAITING_PAYMENT from the current cart. Cart is not cleared until paid.

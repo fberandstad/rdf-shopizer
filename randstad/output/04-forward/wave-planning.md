@@ -46,6 +46,24 @@
 - [ ] Traceability rows updated (FS/RULE/TEST/RISK → files).
 - [ ] HITL PR review recorded (manual; no auto-merge).
 
+### Wave completion status — 2026-06-07
+
+| Wave | Status | Golden master | Tests |
+|------|--------|---------------|-------|
+| W0 Foundation & Agent Core | ✅ done | auth/health | unit |
+| W1 Catalog & RAG | ✅ done | TEST-0001..0004 | unit + E2E |
+| W2 Cart | ✅ done | TEST-0005..0008 | unit + E2E |
+| W3 Checkout & Payment | ✅ done | TEST-0009..0014 | unit + E2E |
+| W4 Orders & Account | ✅ done | TEST-0015..0022 | unit + E2E |
+| W5 Admin & Analytics | ✅ done | TEST-0023..0027 | unit + E2E |
+| W6 Interop & Heartbeat | ✅ done | TEST-0028 (+MCP) | unit + E2E |
+| W7 Hardening & Compliance | ✅ done | RISK/DPR controls | unit + E2E |
+
+**All 8 waves complete.** Verification: **46/46 unit** (`npm test`), **38/38 Playwright E2E**.
+Golden-master **TEST-0001..0028 all green**. NFR checklist consolidated (security/agent/compliance ✅).
+CI/CD pipeline added (gated). **Remaining: stage-4 final HITL approval gate (manual) before any
+dest-repo PR / deploy — never auto-run.**
+
 ### W0 status — 2026-06-06
 
 - [x] Modules generated under `04-forward/converted/` (client + server + agent); `node --check` passes 22/22 server files.
